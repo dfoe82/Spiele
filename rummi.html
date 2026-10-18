@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rummi">
+<meta name="theme-color" content="#16402f">
+<title>Rummi online</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%A2%3C/text%3E%3C/svg%3E">
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+:root{--felt:#1d5641;--felt2:#16402f;--ink:#1d2321;--paper:#f5f1e8;--card:#fff;--line:#e2ddd2;--muted:#6b726f;--accent:#1f6f5c;--gold:#e8b23a;--red:#c8432f;
+  --tile:#fbf6e9;--tileEdge:#d8cdb1;--tileShadow:#bfb293}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--felt2);overscroll-behavior:none}
+button{font:inherit;border:0;border-radius:12px;padding:11px 15px;cursor:pointer;background:#e6f0ec;color:var(--ink)}
+button.primary{background:var(--accent);color:#fff;font-weight:600}
+button.gold{background:var(--gold);color:#1d1d1d;font-weight:700}
+button:disabled{opacity:.35;cursor:default}
+input{font:inherit;padding:12px;border-radius:12px;border:1px solid var(--line);width:100%;background:#fff;color:var(--ink)}
+a{color:inherit}
+
+/* Lobby */
+.lobby{min-height:100%;background:var(--paper);padding:calc(16px + env(safe-area-inset-top)) 16px 30px}
+.lobby .wrap{max-width:460px;margin:0 auto}
+.lobby h1{font-size:28px;margin:8px 0 4px}
+.lobby .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0}
+.lobby h2{font-size:17px;margin:0 0 10px}
+.lobby .muted{color:var(--muted);font-size:14px}
+.lobby .row{display:flex;gap:8px;margin-top:10px}
+.lobby .row>*{flex:1}
+.code{font-size:44px;letter-spacing:10px;font-weight:800;text-align:center;margin:6px 0;font-family:ui-monospace,Menlo,monospace}
+.back{color:var(--muted);text-decoration:none;font-size:15px}
+.err{color:var(--red);font-size:14px;margin-top:8px}
+
+/* Spiel */
+.game{display:flex;flex-direction:column;height:100dvh;height:100vh;height:100dvh}
+.top{display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--felt2);color:#e9f2ee;font-size:14px}
+.top .opp{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.top .opp b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:9px;height:9px;border-radius:50%;background:#e45b45;flex:0 0 auto}
+.dot.on{background:#5bd28f}
+.pill{background:rgba(255,255,255,.12);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.menu{background:rgba(255,255,255,.12);color:#fff;padding:6px 10px;border-radius:10px}
+.board{flex:1;overflow:auto;background:radial-gradient(ellipse at center,var(--felt) 0%,var(--felt2) 100%);padding:12px 10px 20px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:10px}
+.board.watch{opacity:.92}
+.empty-board{color:rgba(255,255,255,.55);text-align:center;width:100%;margin-top:30px;font-size:15px}
+.set{display:flex;gap:2px;padding:4px;border-radius:9px;background:rgba(0,0,0,.18);border:2px solid transparent;align-items:center}
+.set.bad{border-color:#ff7a62;background:rgba(200,67,47,.25)}
+.plus{width:28px;height:38px;border-radius:6px;padding:0;background:rgba(255,255,255,.18);color:#fff;font-size:20px;font-weight:700;border:2px dashed rgba(255,255,255,.5)}
+.t{width:34px;height:46px;border-radius:6px;background:var(--tile);border:1px solid var(--tileEdge);box-shadow:0 2px 0 var(--tileShadow);font-weight:800;font-size:20px;padding:0;display:inline-flex;align-items:center;justify-content:center;transition:transform .08s;font-family:Georgia,"Times New Roman",serif;flex:0 0 auto}
+.set .t{width:28px;height:38px;font-size:17px}
+.t.j{color:#c8432f;font-size:22px}
+.set .t.j{font-size:19px}
+.t.sel{transform:translateY(-6px);box-shadow:0 0 0 3px var(--gold),0 4px 0 var(--tileShadow)}
+.t.new{box-shadow:0 0 0 2px #7fd8ff,0 2px 0 var(--tileShadow)}
+.t.mine{background:#fff7d6}
+.bar{background:var(--felt2);color:#e9f2ee;padding:6px 12px;font-size:14px;display:flex;gap:8px;align-items:center;min-height:34px}
+.bar .grow{flex:1}
+.bar .hint{color:var(--gold)}
+.bar.turn{background:#24694f}
+.flash{background:var(--red);color:#fff;padding:8px 12px;font-size:14px}
+.dock{background:#2a2219;padding:8px 8px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -4px 12px rgba(0,0,0,.3)}
+.actions{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.actions button{padding:9px 11px;font-size:14px;flex:1;white-space:nowrap}
+.rack{display:flex;flex-wrap:wrap;gap:4px;min-height:96px;align-content:flex-start;background:#4a3a28;border-radius:10px;padding:6px}
+.sortrow{display:flex;gap:6px;margin-top:6px}
+.sortrow button{flex:1;padding:6px;font-size:13px;background:#3b2f22;color:#e8dcc4}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
+.overlay .card{background:var(--card);border-radius:18px;padding:20px;max-width:380px;width:100%;text-align:center}
+.overlay h2{margin:0 0 6px;font-size:24px}
+.overlay table{width:100%;border-collapse:collapse;margin:12px 0}
+.overlay td{padding:6px;border-bottom:1px solid var(--line)}
+.overlay td:last-child{text-align:right;font-weight:700}
+.overlay .btns{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.log{font-size:13px;color:var(--muted);text-align:left;max-height:140px;overflow:auto;margin:10px 0 0;padding-left:18px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ===== Steine ===== */
+const COLORS=['#1d1d1f','#1e5bc6','#d77400','#cf2d25'];
+const isJ=id=>id>=104, num=id=>Math.floor(id/8)+1, col=id=>id%4;
+const tileVal=id=>isJ(id)?30:num(id);
+
+function analyze(ids){
+  if(ids.length<3)return {ok:false};
+  const N=ids.filter(i=>!isJ(i)),Js=ids.filter(isJ);
+  if(!N.length)return {ok:false};
+  let best=null;
+  if(ids.length<=4&&N.every(i=>num(i)===num(N[0]))&&new Set(N.map(col)).size===N.length){
+    best={ok:true,value:num(N[0])*ids.length,order:[...N].sort((a,b)=>col(a)-col(b)).concat(Js)};
+  }
+  if(N.every(i=>col(i)===col(N[0]))&&new Set(N.map(num)).size===N.length){
+    const s=[...N].sort((a,b)=>num(a)-num(b));
+    let lo=num(s[0]),hi=num(s[s.length-1]),extra=Js.length-((hi-lo+1)-N.length);
+    if(extra>=0){
+      while(extra>0&&hi<13){hi++;extra--}
+      while(extra>0&&lo>1){lo--;extra--}
+      if(extra===0){
+        const js=[...Js],order=[];let v=0;
+        for(let k=lo;k<=hi;k++){const t=s.find(i=>num(i)===k);order.push(t!==undefined?t:js.pop());v+=k}
+        if(!best||v>best.value)best={ok:true,value:v,order};
+      }
+    }
+  }
+  return best||{ok:false};
+}
+
+/* ===== Speicher ===== */
+const LS='rummi_v1',PFX='spielebuch-rummi-';
+let myName=localStorage.getItem('rummi_name')||'';
+let G=null;try{G=JSON.parse(localStorage.getItem(LS))}catch(e){}
+function save(){try{if(G)localStorage.setItem(LS,JSON.stringify(G));else localStorage.removeItem(LS)}catch(e){}}
+const me=()=>G.role==='host'?0:1;
+
+/* ===== Laufzeit ===== */
+let peer=null,conn=null,connected=false,status='',W=null,sel=new Set(),live=null,flashMsg='',flashT=null,showMenu=false,lobbyErr='';
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function rnd(n,alpha='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'){let s='';const a=new Uint32Array(n);crypto.getRandomValues(a);for(const x of a)s+=alpha[x%alpha.length];return s}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function flash(m){flashMsg=m;clearTimeout(flashT);flashT=setTimeout(()=>{flashMsg='';render()},3500);render()}
+
+function deal(names,prev){
+  const pool=shuffle([...Array(106).keys()]);
+  const start=prev?1-prev.start:(Math.random()<.5?0:1);
+  const s={gid:rnd(8),seq:(prev?prev.seq:0)+1,names,pool,racks:[[],[]],board:[],turn:start,start,first:[false,false],passes:0,last:[],log:[],over:null,tally:prev?prev.tally:[0,0],wins:prev?prev.wins:[0,0],started:Date.now()};
+  for(let k=0;k<14;k++){s.racks[0].push(s.pool.pop());s.racks[1].push(s.pool.pop())}
+  return s;
+}
+
+/* ===== Verbindung ===== */
+function send(m){if(conn&&conn.open){try{conn.send(m)}catch(e){}}}
+function push(){save();send({t:'state',s:G.s});render()}
+function startNet(){
+  if(typeof Peer==='undefined'){status='Verbindungsbibliothek konnte nicht geladen werden.';render();return}
+  if(peer){try{peer.destroy()}catch(e){}}
+  connected=false;
+  if(G.role==='host'){
+    peer=new Peer(PFX+G.code);
+    peer.on('open',()=>{status=G.s?'Warte, bis dein Mitspieler wieder da ist…':'Warte auf Mitspieler…';render()});
+    peer.on('connection',c=>{if(conn&&conn.open&&conn!==c){try{conn.close()}catch(e){}}setupConn(c)});
+  }else{
+    peer=new Peer();
+    peer.on('open',dial);
+  }
+  peer.on('error',e=>{
+    if(e.type==='unavailable-id'){status='Verbinde neu…';render();setTimeout(startNet,3000)}
+    else if(e.type==='peer-unavailable'){status='Spiel nicht erreichbar – ist dein Mitspieler online? Neuer Versuch…';render();setTimeout(dial,4000)}
+    else if(e.type==='network'||e.type==='server-error'||e.type==='socket-error'){status='Keine Verbindung zum Server – neuer Versuch…';render();setTimeout(startNet,5000)}
+    else{status='Verbindungsfehler ('+e.type+')';render()}
+  });
+  peer.on('disconnected',()=>{setTimeout(()=>{try{if(peer&&!peer.destroyed)peer.reconnect()}catch(e){}},1500)});
+}
+function dial(){
+  if(!peer||peer.destroyed||(conn&&conn.open))return;
+  status='Verbinde…';render();
+  const c=peer.connect(PFX+G.code,{reliable:true});setupConn(c);
+  setTimeout(()=>{if(!c.open&&conn===c){try{c.close()}catch(e){}dial()}},9000);
+}
+function setupConn(c){
+  conn=c;
+  c.on('open',()=>{if(conn!==c)return;connected=true;status='';send({t:'hello',name:myName,s:G.s});render()});
+  c.on('data',onData);
+  c.on('close',()=>{if(conn!==c)return;connected=false;live=null;status='Verbindung getrennt';render();if(G&&G.role==='guest')setTimeout(dial,2500)});
+  c.on('error',()=>{});
+}
+function onData(m){
+  if(!G||!m)return;
+  if(m.t==='hello'){
+    adopt(m.s);
+    if(G.role==='host'){
+      if(!G.s)G.s=deal([myName,m.name||'Gast']);
+      else{G.s.names[0]=myName;if(m.name)G.s.names[1]=m.name}
+      save();send({t:'state',s:G.s});
+    }
+  }else if(m.t==='state'){adopt(m.s)}
+  else if(m.t==='live'){if(G.s&&G.s.turn!==me())live=m.board}
+  else if(m.t==='rematch'&&G.role==='host'&&G.s&&G.s.over){G.s=deal(G.s.names,G.s);W=null;sel.clear();push();return}
+  render();
+}
+function adopt(s){
+  if(!s)return;
+  if(!G.s||s.seq>G.s.seq){
+    const wasMine=G.s&&G.s.turn===me()&&!G.s.over;
+    G.s=s;live=null;save();
+    if(!wasMine&&s.turn===me()&&!s.over){try{navigator.vibrate&&navigator.vibrate(150)}catch(e){}flash('Du bist dran!')}
+    if(s.over)record();
+  }
+}
+
+/* ===== Spielzug ===== */
+function ensureW(){
+  const s=G.s;
+  if(s&&s.turn===me()&&!s.over){if(!W||W.seq!==s.seq){W={seq:s.seq,board:s.board.map(x=>[...x]),rack:[...s.racks[me()]]};sel.clear()}}
+  else{W=null;if(!s||s.over)sel.clear()}
+}
+const myTurn=()=>G.s&&G.s.turn===me()&&!G.s.over;
+function sendLive(){send({t:'live',board:W.board})}
+function arrange(){W.board=W.board.filter(x=>x.length).map(st=>{const a=analyze(st);return a.ok?a.order:st})}
+function takeSel(){W.board=W.board.map(st=>st.filter(i=>!sel.has(i)));W.rack=W.rack.filter(i=>!sel.has(i));const ids=[...sel];sel.clear();return ids}
+function toSet(k){if(!sel.size)return;const ids=takeSel();W.board[k].push(...ids);arrange();sendLive();render()}
+function newSet(){if(!sel.size)return;const ids=takeSel();W.board.push(ids);arrange();sendLive();render()}
+function toRack(){
+  const start=G.s.racks[me()];
+  if([...sel].some(i=>!start.includes(i)))return flash('Nur Steine, die du in diesem Zug gelegt hast, dürfen zurück auf die Bank.');
+  const ids=takeSel();W.rack.push(...ids);arrange();sendLive();render();
+}
+function resetTurn(){W=null;ensureW();sendLive();render()}
+function changed(){return W&&(W.rack.length!==G.s.racks[me()].length||JSON.stringify(W.board)!==JSON.stringify(G.s.board))}
+function firstPoints(){
+  const key=st=>[...st].sort((a,b)=>a-b).join(',');const old=new Set(G.s.board.map(key));
+  return W.board.filter(st=>!old.has(key(st))).reduce((a,st)=>{const r=analyze(st);return a+(r.ok?r.value:0)},0);
+}
+function endTurn(){
+  const s=G.s,m=me(),start=s.racks[m];
+  const played=start.filter(i=>!W.rack.includes(i));
+  if(!played.length)return flash('Lege mindestens einen Stein – oder ziehe einen.');
+  if(W.board.some(st=>!analyze(st).ok))return flash('Es gibt noch ungültige Reihen (rot markiert).');
+  if(!s.first[m]){
+    const key=st=>[...st].sort((a,b)=>a-b).join(',');const now=new Set(W.board.map(key));
+    if(!s.board.every(st=>now.has(key(st))))return flash('Beim ersten Auslegen darfst du die Reihen auf dem Tisch noch nicht umbauen.');
+    const p=firstPoints();
+    if(p<30)return flash(`Das erste Auslegen braucht mindestens 30 Punkte – du hast ${p}.`);
+  }
+  s.board=W.board.map(st=>analyze(st).order);s.racks[m]=[...W.rack];s.first[m]=true;s.passes=0;s.last=played;
+  s.log.unshift(`${s.names[m]} legt ${played.length} Stein${played.length>1?'e':''}`);
+  if(!W.rack.length)return finish(m);
+  nextTurn();
+}
+function drawTile(){
+  if(changed()&&!confirm('Deine Änderungen werden zurückgenommen. Trotzdem ziehen?'))return;
+  const s=G.s,m=me();
+  if(s.pool.length){const t=s.pool.pop();s.racks[m].push(t);s.passes=0;s.log.unshift(`${s.names[m]} zieht einen Stein`)}
+  else{s.passes++;s.log.unshift(`${s.names[m]} passt`);if(s.passes>=2)return finish(null)}
+  s.last=[];nextTurn();
+}
+function nextTurn(){const s=G.s;s.turn=1-s.turn;s.seq++;s.log=s.log.slice(0,30);W=null;sel.clear();push()}
+function finish(w){
+  const s=G.s,v=s.racks.map(r=>r.reduce((a,i)=>a+tileVal(i),0));
+  if(w===null)w=v[0]===v[1]?-1:(v[0]<v[1]?0:1);
+  const pts=[0,0];
+  if(w>=0){const d=v[1-w]-v[w];pts[w]=d;pts[1-w]=-d;s.wins[w]++}
+  s.tally=[s.tally[0]+pts[0],s.tally[1]+pts[1]];
+  s.over={w,pts,v,at:Date.now()};s.seq++;W=null;sel.clear();
+  record();push();
+}
+function rematch(){
+  if(G.role==='host'){G.s=deal(G.s.names,G.s);W=null;sel.clear();push()}
+  else{send({t:'rematch'});flash(connected?'Anfrage gesendet – dein Mitspieler startet die neue Runde.':'Nicht verbunden.')}
+}
+/* Ergebnis ins Spielebuch (gleiche Website) eintragen */
+function record(){
+  const s=G.s;if(!s.over||G.recorded===s.gid)return;
+  try{
+    const K='spielebuch_v1';const S=Object.assign({players:[],history:[],current:null},JSON.parse(localStorage.getItem(K)||'null')||{});
+    const winners=s.over.w>=0?[s.names[s.over.w]]:[...s.names];
+    S.history.unshift({id:Date.now(),game:'rummikub',date:s.over.at||Date.now(),started:s.started,players:[...s.names],scores:[...s.over.pts],winners,info:'Online'});
+    s.names.forEach(n=>{if(!S.players.includes(n))S.players.push(n)});
+    localStorage.setItem(K,JSON.stringify(S));
+  }catch(e){}
+  G.recorded=s.gid;save();
+}
+
+/* ===== Bank sortieren ===== */
+function rackView(r){const o=G.order||[];const ix=i=>{const k=o.indexOf(i);return k<0?1000+i:k};return [...r].sort((a,b)=>ix(a)-ix(b))}
+function sortRack(mode){
+  const r=W?W.rack:G.s.racks[me()];
+  const key=mode==='c'?i=>isJ(i)?999:col(i)*20+num(i):i=>isJ(i)?999:num(i)*10+col(i);
+  G.order=[...r].sort((a,b)=>key(a)-key(b)||a-b);save();render();
+}
+
+/* ===== Lobby-Aktionen ===== */
+function readName(){const e=document.getElementById('nm');const n=(e?e.value:myName).trim();if(!n){lobbyErr='Bitte gib deinen Namen ein.';render();return null}myName=n.slice(0,20);localStorage.setItem('rummi_name',myName);return myName}
+function createGame(){if(!readName())return;G={code:rnd(4),role:'host',s:null};save();location.hash=G.code;startNet();render()}
+function joinGame(code){
+  if(!readName())return;
+  code=(code||document.getElementById('cd').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(code.length!==4){lobbyErr='Der Code hat 4 Zeichen.';render();return}
+  if(!G||G.code!==code)G={code,role:'guest',s:null};
+  save();location.hash=code;startNet();render();
+}
+function resume(){startNet();render()}
+function leave(){
+  if(!confirm('Spiel verlassen? Du kannst später mit dem gleichen Code nicht mehr weitermachen.'))return;
+  try{peer&&peer.destroy()}catch(e){}peer=null;conn=null;G=null;save();W=null;sel.clear();showMenu=false;
+  history.replaceState(null,'',location.pathname);render();
+}
+function shareLink(){
+  const url=location.origin+location.pathname+'#'+G.code;
+  if(navigator.share)navigator.share({title:'Rummi',text:`Spiel Rummi mit mir! Code: ${G.code}`,url}).catch(()=>{});
+  else navigator.clipboard.writeText(url).then(()=>flash('Link kopiert')).catch(()=>prompt('Link kopieren:',url));
+}
+
+/* ===== Ansichten ===== */
+function tileHTML(id,extra=''){
+  return `<button class="t${isJ(id)?' j':''}${sel.has(id)?' sel':''}${extra}" data-id="${id}"${isJ(id)?'':` style="color:${COLORS[col(id)]}"`}>${isJ(id)?'☺':num(id)}</button>`;
+}
+function lobbyV(){
+  const hashCode=(location.hash||'').slice(1).toUpperCase();
+  let h=`<div class="lobby"><div class="wrap"><a class="back" href="index.html">‹ Spielebuch</a><h1>🔢 Rummi online</h1><p class="muted">Zu zweit live gegeneinander – jeder auf seinem eigenen Handy.</p>`;
+  h+=`<div class="card"><h2>Dein Name</h2><input id="nm" value="${esc(myName)}" maxlength="20" placeholder="Name" autocomplete="nickname"></div>`;
+  if(G&&G.code&&!hashCode){
+    h+=`<div class="card"><h2>Laufendes Spiel</h2><p class="muted">Code ${G.code}${G.s?` · ${esc(G.s.names.join(' gegen '))}`:''}</p><div class="row"><button class="primary" data-act="resume">Weiterspielen</button><button data-act="leave">Beenden</button></div></div>`;
+  }
+  if(hashCode){
+    h+=`<div class="card"><h2>Einladung</h2><p class="muted">Du wurdest zum Spiel <b>${esc(hashCode)}</b> eingeladen.</p><button class="primary" style="width:100%;margin-top:6px" data-act="joinHash">Mitspielen</button></div>`;
+  }else{
+    h+=`<div class="card"><h2>Neues Spiel</h2><p class="muted">Du bekommst einen Code oder Link, den du deinem Mitspieler schickst.</p><button class="primary" style="width:100%;margin-top:6px" data-act="create">Spiel erstellen</button></div>`;
+    h+=`<div class="card"><h2>Beitreten</h2><div class="row"><input id="cd" maxlength="4" placeholder="Code" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:4px"><button data-act="join">Beitreten</button></div></div>`;
+  }
+  if(lobbyErr)h+=`<div class="err">${esc(lobbyErr)}</div>`;
+  h+=`<div class="card"><h2>Kurzregeln</h2><p class="muted">Jeder startet mit 14 Steinen. Reihen: mindestens 3 Steine – gleiche Zahl in verschiedenen Farben oder aufsteigende Zahlen in einer Farbe. Das erste Auslegen muss mindestens 30 Punkte ergeben. Danach darfst du die Reihen auf dem Tisch beliebig umbauen, solange am Ende alles gültig ist. Kannst oder willst du nicht legen, ziehst du einen Stein. Wer zuerst alle Steine los ist, gewinnt.</p></div>`;
+  return h+'</div></div>';
+}
+function waitV(){
+  const url=location.origin+location.pathname+'#'+G.code;
+  return `<div class="lobby"><div class="wrap"><h1>🔢 Rummi online</h1>
+  <div class="card" style="text-align:center"><h2>${G.role==='host'?'Schick deinem Mitspieler diesen Code':'Verbinde mit Spiel'}</h2><div class="code">${G.code}</div>
+  ${G.role==='host'?`<p class="muted" style="word-break:break-all">${esc(url)}</p><button class="primary" style="width:100%" data-act="share">Link teilen</button>`:''}
+  <p class="muted" style="margin-top:14px">${esc(status||'Verbinde…')}</p></div>
+  <button style="width:100%" data-act="leave">Abbrechen</button>${flashMsg?`<p class="err">${esc(flashMsg)}</p>`:''}</div></div>`;
+}
+function gameV(){
+  const s=G.s,m=me(),o=1-m,mine=myTurn();
+  ensureW();
+  const board=mine?W.board:(live||s.board);
+  const rack=rackView(mine?W.rack:s.racks[m]);
+  const startRack=new Set(s.racks[m]);
+  const lastSet=new Set(s.last||[]);
+  let h=`<div class="game"><div class="top"><div class="opp"><span class="dot${connected?' on':''}"></span><b>${esc(s.names[o]||'…')}</b><span class="pill">${s.racks[o].length} Steine</span></div><span class="pill">Stapel ${s.pool.length}</span><button class="menu" data-act="menu">☰</button></div>`;
+  if(showMenu){
+    h+=`<div class="bar" style="flex-wrap:wrap"><span class="grow">Stand: ${esc(s.names[0])} ${s.tally[0]} · ${esc(s.names[1])} ${s.tally[1]} <span style="opacity:.7">(Siege ${s.wins[0]}:${s.wins[1]})</span></span><button class="small" data-act="share">Link</button><button class="small" data-act="leave">Verlassen</button></div>`;
+    if(s.log.length)h+=`<div class="bar" style="display:block;font-size:13px;opacity:.85">${s.log.slice(0,4).map(esc).join(' · ')}</div>`;
+  }
+  h+=`<div class="board${mine?'':' watch'}" id="board">`;
+  if(!board.length)h+=`<div class="empty-board">${mine?'Wähle Steine auf deiner Bank aus und tippe „Neue Reihe“.':'Der Tisch ist noch leer.'}</div>`;
+  board.forEach((st,k)=>{
+    const ok=analyze(st).ok;
+    h+=`<div class="set${ok?'':' bad'}">${st.map(id=>tileHTML(id,(mine&&startRack.has(id)?' mine':'')+(!mine||!startRack.has(id)?(lastSet.has(id)?' new':''):''))).join('')}${mine&&sel.size?`<button class="plus" data-act="toset" data-arg="${k}">+</button>`:''}</div>`;
+  });
+  h+='</div>';
+  if(flashMsg)h+=`<div class="flash">${esc(flashMsg)}</div>`;
+  else if(!connected)h+=`<div class="bar"><span class="grow">⚠︎ ${esc(status||'Nicht verbunden')}</span></div>`;
+  if(mine){
+    const hint=!s.first[m]?`<span class="hint">Erstes Auslegen: ${firstPoints()}/30</span>`:'';
+    h+=`<div class="bar turn"><b class="grow">Du bist dran</b>${hint}</div>`;
+  }else h+=`<div class="bar"><span class="grow">${esc(s.names[o])} ist dran…</span>${!s.first[m]?'<span class="hint">Du musst noch 30 Punkte auslegen</span>':''}</div>`;
+  h+=`<div class="dock">`;
+  if(mine){
+    const hasSel=sel.size>0,ch=changed();
+    h+=`<div class="actions">${hasSel?`<button class="gold" data-act="newset">Neue Reihe</button><button data-act="torack">Auf Bank</button><button data-act="clearsel">✕</button>`:`<button data-act="reset"${ch?'':' disabled'}>↺ Zurück</button>${ch?`<button class="primary" data-act="end">Zug beenden ✓</button>`:`<button class="primary" data-act="draw">${s.pool.length?'Stein ziehen':'Passen'}</button>`}`}</div>`;
+  }
+  h+=`<div class="rack">${rack.map(id=>tileHTML(id)).join('')}</div><div class="sortrow"><button data-act="sortc">Nach Farbe</button><button data-act="sortn">Nach Zahl</button></div></div>`;
+  if(s.over){
+    const w=s.over.w;
+    h+=`<div class="overlay"><div class="card"><h2>${w<0?'Unentschieden':w===m?'🏆 Gewonnen!':`${esc(s.names[w])} gewinnt`}</h2><p class="muted" style="color:var(--muted)">${s.racks[w<0?0:w].length?'Der Stapel ist leer – die wenigsten Punkte auf der Bank gewinnen.':'Alle Steine abgelegt.'}</p>
+    <table>${[0,1].map(i=>`<tr><td>${esc(s.names[i])} <small style="color:var(--muted)">(Rest ${s.over.v[i]})</small></td><td>${s.over.pts[i]>0?'+':''}${s.over.pts[i]}</td></tr>`).join('')}<tr><td><b>Gesamtstand</b></td><td>${s.tally[0]} : ${s.tally[1]}</td></tr></table>
+    <div class="btns"><button class="primary" data-act="rematch">${G.role==='host'?'Neue Runde':'Neue Runde anfragen'}</button><a href="index.html"><button style="width:100%">Zum Spielebuch</button></a><button data-act="leave">Spiel verlassen</button></div></div></div>`;
+  }
+  return h+'</div>';
+}
+function render(){
+  const b=document.getElementById('board'),sc=b?b.scrollTop:0;
+  let html;
+  if(!G||!G.code||!peer)html=lobbyV();
+  else if(!G.s)html=waitV();
+  else html=gameV();
+  const nm=document.getElementById('nm');if(nm)myName=nm.value;
+  document.getElementById('app').innerHTML=html;
+  const b2=document.getElementById('board');if(b2)b2.scrollTop=sc;
+  document.title=G&&G.s&&myTurn()?'● Du bist dran – Rummi':'Rummi online';
+}
+
+/* ===== Eingaben ===== */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act],[data-id]');if(!el)return;
+  if(el.dataset.id!==undefined&&!el.dataset.act){
+    const id=+el.dataset.id;
+    if(!G||!G.s||!myTurn())return;
+    sel.has(id)?sel.delete(id):sel.add(id);render();return;
+  }
+  lobbyErr='';
+  const a=el.dataset.act;
+  ({create:createGame,join:()=>joinGame(),joinHash:()=>joinGame(location.hash.slice(1)),resume,leave,share:shareLink,
+    menu:()=>{showMenu=!showMenu;render()},
+    toset:()=>toSet(+el.dataset.arg),newset:newSet,torack:toRack,clearsel:()=>{sel.clear();render()},
+    reset:resetTurn,end:endTurn,draw:drawTile,sortc:()=>sortRack('c'),sortn:()=>sortRack('n'),rematch}[a]||(()=>{}))();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='cd')joinGame()});
+window.addEventListener('hashchange',()=>{if(!peer)render()});
+
+/* Start: Einladungslink eines bekannten Spiels direkt fortsetzen */
+(function(){
+  const hc=(location.hash||'').slice(1).toUpperCase();
+  if(G&&G.code&&hc===G.code&&myName)startNet();
+  render();
+})();
+</script>
+</body>
+</html>
