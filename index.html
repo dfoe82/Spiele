@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Spielebuch">
+<meta name="theme-color" content="#1f6f5c">
+<title>Spielebuch</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E">
+<style>
+:root{--bg:#f5f1e8;--card:#fff;--ink:#1d2321;--muted:#6b726f;--line:#e2ddd2;--accent:#1f6f5c;--on:#fff;--accent2:#e6f0ec;--gold:#b7801c;--red:#b8442f}
+@media (prefers-color-scheme:dark){:root{--bg:#121614;--card:#1c2320;--ink:#ecefed;--muted:#9aa39f;--line:#2d3632;--accent:#4fb393;--on:#0e221b;--accent2:#22352e;--gold:#e0b050;--red:#e47c66}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+header{display:flex;align-items:center;gap:8px;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;position:sticky;top:0;background:var(--bg);z-index:5;border-bottom:1px solid var(--line)}
+header h1{font-size:20px;margin:0;flex:1}
+main{max-width:720px;margin:0 auto;padding:16px}
+h2{font-size:17px;margin:0 0 8px}
+p{margin:0 0 10px}
+.muted{color:var(--muted)}
+button,.btn{font:inherit;border:0;border-radius:12px;padding:11px 15px;background:var(--accent2);color:var(--ink);cursor:pointer;display:inline-block;text-align:center}
+button.primary{background:var(--accent);color:var(--on);font-weight:600}
+button.danger{color:var(--red)}
+button.ghost{background:transparent;padding:8px 10px}
+button.small{font-size:14px;padding:6px 10px}
+button:disabled{opacity:.4;cursor:default}
+.wide{display:block;width:100%;margin-top:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 14px;text-align:left;display:flex;flex-direction:column;gap:4px;min-height:118px}
+.tile .ico{font-size:32px}
+.tile b{font-size:17px}
+.tile small{color:var(--muted)}
+a.online{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;color:var(--ink);text-decoration:none;text-align:left}
+a.online .ico{font-size:30px}
+.resume{display:flex;flex-direction:column;gap:10px;border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chip{border-radius:999px;padding:8px 14px;background:var(--bg);border:1px solid var(--line)}
+.chip.on{background:var(--accent);color:var(--on);border-color:var(--accent)}
+.num{display:inline-block;min-width:20px;height:20px;line-height:20px;border-radius:10px;background:var(--on);color:var(--accent);font-size:12px;font-weight:700;margin-right:6px}
+input[type=text],input[type=number],input:not([type]){font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);min-width:0;flex:1}
+.add{margin-top:6px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:52px}
+.seg button.on{background:var(--accent);color:var(--on);font-weight:600}
+.seg.wrap button{flex:0 0 auto}
+.standings{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
+.standings span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px;white-space:nowrap;font-size:14px}
+.standings span.lead{border-color:var(--gold)}
+.tbl{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:14px}
+table{border-collapse:collapse;width:100%}
+.sheet th,.sheet td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.sheet th:first-child{text-align:left;position:sticky;left:0;background:var(--card);font-weight:500;z-index:1;padding-left:12px}
+.sheet thead th{padding:10px 6px;font-weight:700}
+.sheet select{appearance:none;-webkit-appearance:none;font:inherit;width:100%;min-width:56px;text-align:center;text-align-last:center;padding:8px 4px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink)}
+.sheet select.set{background:var(--accent2);font-weight:600;border-color:transparent}
+.sheet tr.sum td,.sheet tr.sum th{background:var(--bg);font-weight:600}
+.sheet tr.sum th{background:var(--bg)}
+.sheet tr.total td,.sheet tr.total th{font-weight:800;font-size:18px;padding:10px 6px;border-bottom:0}
+.sheet tr.cur td,.sheet tr.cur th{background:var(--accent2)}
+.sheet tr.click{cursor:pointer}
+/* Kniffel-Block */
+.kblock{background:#fffdf6;border-color:#d9cfb8;color:#1d2321;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.kblock .sheet th,.kblock .sheet td{border-bottom:1px solid #e6dcc6;border-right:1px solid #eee5d2}
+.kblock .sheet th:first-child{background:#fffdf6;text-align:left;padding:6px 10px;min-width:118px}
+.kblock .sheet th:first-child span{display:block;font-weight:600;font-size:15px}
+.kblock .sheet th:first-child small{display:block;font-size:11px;color:#8a8170;font-weight:400}
+.kblock thead th{background:#c8302a!important;color:#fff;font-size:15px;padding:10px 8px;min-width:64px}
+.kblock thead th.kt{font-weight:900;letter-spacing:2px;font-size:16px}
+.kblock thead th.nx{background:#9e2520!important}
+.kblock tr.sec th{background:#f1e9d6!important;color:#8a5a1c;font-size:12px;text-transform:uppercase;letter-spacing:1px;padding:4px 10px;position:static}
+.kblock td.kc{height:44px;min-width:64px;font-size:19px;font-weight:700;cursor:pointer;color:#1e4fae}
+.kblock td.kc:empty::after{content:'＋';color:#d6ccb6;font-weight:400;font-size:16px}
+.kblock td.kc.x{color:#c8302a}
+.kblock td.nx{background:rgba(232,178,58,.12)}
+.kblock td.kc:active{background:#f3e6c3}
+.kblock tr.sum td,.kblock tr.sum th{background:#f7f1e3!important;font-weight:700}
+.kblock tr.sum th small{display:inline;font-size:11px;color:#8a8170;font-weight:400}
+.kblock tr.sum td small{color:#8a8170;font-weight:500}
+.kblock tr.total td,.kblock tr.total th{background:#fff3c4!important;font-size:20px}
+.ksheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.ksheet{background:var(--card);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));animation:up .18s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.ksheet .kh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.ksheet .kh b{font-size:20px;display:block}
+.ksheet .kh small{color:var(--muted)}
+.kgrid{display:grid;gap:8px;margin-bottom:12px}
+.kgrid.g5{grid-template-columns:repeat(5,1fr)}
+.kgrid.g6{grid-template-columns:repeat(6,1fr)}
+.kgrid.g1{grid-template-columns:1fr}
+.kv{display:flex;flex-direction:column;align-items:center;padding:12px 4px;border-radius:12px}
+.kv b{font-size:22px}
+.kv small{font-size:11px;color:var(--muted)}
+.kgrid.g1 .kv{padding:18px}
+.kgrid.g1 .kv b{font-size:30px}
+.kv.on{background:var(--accent);color:var(--on)}
+.kv.on small{color:var(--on)}
+.plus{color:var(--accent);font-weight:700}
+.minus{color:var(--red)}
+.rk-row{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.rk-row label{flex:1;display:flex;gap:8px;align-items:center}
+.rk-row input[type=radio]{width:22px;height:22px;accent-color:var(--accent)}
+.rk-row input[type=number]{max-width:120px}
+.hole-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.hole-nav b{font-size:22px}
+.hole-nav button{font-size:22px;width:52px}
+.mg-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.mg-row .nm{flex:1;display:flex;flex-direction:column}
+.mg-row .val{min-width:36px;text-align:center;font-size:24px;font-weight:700}
+.step{width:48px;height:48px;font-size:24px;padding:0}
+.kb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.kb{text-align:center;margin:0}
+.kb .big{font-size:52px;font-weight:800;line-height:1.1;margin:6px 0}
+.pips{margin-bottom:10px;letter-spacing:4px;color:var(--gold)}
+.winner{border-color:var(--gold);font-size:18px;text-align:center}
+.actions{margin-top:20px}
+.entry .eh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.entry .eh b{flex:0 0 auto}
+.entry .eh small{flex:1}
+.rank{margin:8px 0 0;padding-left:22px}
+.rank li{padding:3px 0}
+.rank li div{display:flex;justify-content:space-between}
+.rank li.w{font-weight:700}
+.stats th,.stats td{padding:6px 4px;text-align:right;border-bottom:1px solid var(--line)}
+.stats th:first-child,.stats td:first-child{text-align:left}
+.empty{text-align:center;color:var(--muted);padding:30px 14px}
+</style>
+</head>
+<body>
+<header id="hdr"></header>
+<main id="app"></main>
+<script>
+const GAMES={
+  kniffel:{name:'Kniffel',ico:'🎲',desc:'Würfelblock',best:'high',min:1},
+  rummikub:{name:'Rummikub',ico:'🔢',desc:'Punkte pro Runde',best:'high',min:2},
+  minigolf:{name:'Minigolf',ico:'⛳',desc:'Schläge pro Bahn',best:'low',min:1},
+  kubb:{name:'Wikingerschach',ico:'🪵',desc:'Gewonnene Runden',best:'high',min:2}
+};
+const KEY='spielebuch_v1';
+let S=load();
+let view={name:'home'};
+
+function load(){
+  const d={players:[],history:[],current:null};
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s)return Object.assign(d,s)}catch(e){}
+  return d;
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){alert('Speichern nicht möglich (privater Modus?).')}}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function fmtDate(t){return new Date(t).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+const range=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
+
+/* ---------- Kniffel ---------- */
+const KN_UP=['Einser','Zweier','Dreier','Vierer','Fünfer','Sechser'].map((l,i)=>({k:'u'+(i+1),l,o:range(0,5).map(x=>x*(i+1))}));
+const KN_LO=[
+  {k:'p3',l:'Dreierpasch',o:[0,...range(5,30)]},
+  {k:'p4',l:'Viererpasch',o:[0,...range(5,30)]},
+  {k:'fh',l:'Full House',o:[0,25]},
+  {k:'ks',l:'Kleine Straße',o:[0,30]},
+  {k:'gs',l:'Große Straße',o:[0,40]},
+  {k:'kn',l:'Kniffel',o:[0,50]},
+  {k:'ch',l:'Chance',o:[0,...range(5,30)]}
+];
+function knCalc(s){
+  const up=KN_UP.reduce((a,r)=>a+(s[r.k]||0),0),bonus=up>=63?35:0,lo=KN_LO.reduce((a,r)=>a+(s[r.k]||0),0);
+  return {up,bonus,lo,total:up+bonus+lo};
+}
+const KN_HINT={u1:'nur Einser zählen',u2:'nur Zweier zählen',u3:'nur Dreier zählen',u4:'nur Vierer zählen',u5:'nur Fünfer zählen',u6:'nur Sechser zählen',
+  p3:'alle Augen zählen',p4:'alle Augen zählen',fh:'25 Punkte',ks:'30 Punkte',gs:'40 Punkte',kn:'50 Punkte',ch:'alle Augen zählen'};
+const KN_ALL=[...KN_UP,...KN_LO];
+let knPick=null;
+function knOpen(p,k){knPick={p,k};render()}
+function knClose(){knPick=null;render()}
+function knSet(v){const {p,k}=knPick;S.current.data.s[p][k]=v;knPick=null;save();render()}
+function knNext(c){
+  if(c.players.length<2)return -1;
+  const f=c.data.s.map(s=>KN_ALL.filter(r=>s[r.k]!=null).length);
+  const m=Math.min(...f);return m>=KN_ALL.length?-1:f.indexOf(m);
+}
+function knV(c){
+  const d=c.data,calc=d.s.map(knCalc),nx=knNext(c);
+  const cell=(p,r)=>{const v=d.s[p][r.k];return `<td class="kc${v==null?'':v===0?' x':' f'}${p===nx?' nx':''}" onclick="knOpen(${p},'${r.k}')">${v==null?'':v===0?'—':v}</td>`};
+  const row=r=>`<tr><th><span>${r.l}</span><small>${KN_HINT[r.k]}</small></th>${c.players.map((_,p)=>cell(p,r)).join('')}</tr>`;
+  const sum=(cls,l,f)=>`<tr class="${cls}"><th><span>${l}</span></th>${calc.map((x,p)=>`<td class="${p===nx?'nx':''}">${f(x)}</td>`).join('')}</tr>`;
+  let b=`<thead><tr><th class="kt">KNIFFEL</th>${c.players.map((p,i)=>`<th class="${i===nx?'nx':''}">${i===nx?'▶ ':''}${esc(p)}</th>`).join('')}</tr></thead><tbody>`;
+  b+=`<tr class="sec"><th colspan="${c.players.length+1}">Oberer Teil</th></tr>`;
+  b+=KN_UP.map(row).join('');
+  b+=sum('sum','Summe oben',x=>x.up);
+  b+=sum('sum','Bonus <small>bei 63 und mehr</small>',x=>x.bonus?'+35':`<small>noch ${63-x.up}</small>`);
+  b+=`<tr class="sec"><th colspan="${c.players.length+1}">Unterer Teil</th></tr>`;
+  b+=KN_LO.map(row).join('');
+  b+=sum('sum','Summe unten',x=>x.lo);
+  b+=sum('total','Endsumme',x=>x.total);
+  b+='</tbody>';
+  let h=`<div class="tbl kblock"><table class="sheet">${b}</table></div><p class="muted" style="font-size:13px;margin-top:-6px">Feld antippen zum Eintragen. ▶ zeigt, wer als Nächstes dran ist.</p>`;
+  if(knPick)h+=knSheet(c);
+  return h;
+}
+function knSheet(c){
+  const {p,k}=knPick,r=KN_ALL.find(x=>x.k===k),v=c.data.s[p][k],opts=r.o.filter(o=>o>0),up=k[0]==='u';
+  const btns=opts.map((o,i)=>`<button class="kv${v===o?' on':''}" onclick="knSet(${o})"><b>${o}</b>${up?`<small>${i+1}× ${k.slice(1)}</small>`:''}</button>`).join('');
+  return `<div class="ksheet-bg" onclick="if(event.target===this)knClose()"><div class="ksheet">
+    <div class="kh"><div><b>${r.l}</b><small>${esc(c.players[p])} · ${KN_HINT[k]}</small></div><button class="ghost" onclick="knClose()">✕</button></div>
+    <div class="kgrid ${opts.length>6?'g6':opts.length===1?'g1':'g5'}">${btns}</div>
+    <div class="row"><button class="danger" style="flex:1" onclick="knSet(0)">— Streichen (0)</button>${v!=null?`<button style="flex:1" onclick="knSet(null)">Feld leeren</button>`:''}</div>
+  </div></div>`;
+}
+
+/* ---------- Rummikub ---------- */
+function rkPoints(r){const sum=r.rem.reduce((a,b)=>a+b,0);return r.rem.map((x,i)=>i===r.w?sum:-x)}
+function rkWin(){
+  const w=document.querySelector('input[name=rw]:checked');
+  S.current.players.forEach((_,i)=>{const e=document.getElementById('rk'+i);e.disabled=!!w&&+w.value===i;if(e.disabled)e.value=''});
+}
+function rkAdd(){
+  const w=document.querySelector('input[name=rw]:checked');
+  if(!w)return alert('Bitte den Gewinner der Runde markieren.');
+  const wi=+w.value;
+  const rem=S.current.players.map((_,i)=>i===wi?0:Math.max(0,parseInt(document.getElementById('rk'+i).value,10)||0));
+  S.current.data.rounds.push({w:wi,rem});save();render();
+}
+function rkUndo(){if(confirm('Letzte Runde löschen?')){S.current.data.rounds.pop();save();render()}}
+function rkV(c){
+  const d=c.data,tot=totals(c);
+  let h=`<div class="card"><h2>Runde ${d.rounds.length+1}</h2><p class="muted">Gewinner markieren, bei den anderen den Wert der übrigen Steine eintragen (Joker = 30).</p>`;
+  h+=c.players.map((p,i)=>`<div class="rk-row"><label><input type="radio" name="rw" value="${i}" onchange="rkWin()">${esc(p)}</label><input type="number" inputmode="numeric" min="0" id="rk${i}" placeholder="Restwert"></div>`).join('');
+  h+=`<button class="primary wide" onclick="rkAdd()">Runde eintragen</button></div>`;
+  if(d.rounds.length){
+    let t=`<thead><tr><th>Runde</th>${c.players.map(p=>`<th>${esc(p)}</th>`).join('')}</tr></thead><tbody>`;
+    t+=d.rounds.map((r,n)=>`<tr><th>${n+1}</th>${rkPoints(r).map(v=>`<td class="${v>0?'plus':v<0?'minus':''}">${v>0?'+':''}${v}</td>`).join('')}</tr>`).join('');
+    t+=`<tr class="total"><th>Gesamt</th>${tot.map(v=>`<td>${v}</td>`).join('')}</tr></tbody>`;
+    h+=`<div class="tbl"><table class="sheet">${t}</table></div><button class="danger" onclick="rkUndo()">Letzte Runde löschen</button>`;
+  }
+  return h;
+}
+
+/* ---------- Minigolf ---------- */
+function mgStep(p,dlt){
+  const d=S.current.data,a=d.st[p];let v=a[d.cur];
+  v=v==null?(dlt>0?1:null):v+dlt;
+  if(v!=null&&v<1)v=null;
+  a[d.cur]=v;save();render();
+}
+function mgGo(dlt){const d=S.current.data;d.cur=Math.min(d.holes-1,Math.max(0,d.cur+dlt));save();render()}
+function mgJump(n){S.current.data.cur=n;save();render();window.scrollTo({top:0,behavior:'smooth'})}
+function mgV(c){
+  const d=c.data,cur=d.cur,tot=totals(c);
+  let h=`<div class="card"><div class="hole-nav"><button onclick="mgGo(-1)"${cur===0?' disabled':''}>‹</button><div><b>Bahn ${cur+1}</b> <span class="muted">von ${d.holes}</span></div><button onclick="mgGo(1)"${cur===d.holes-1?' disabled':''}>›</button></div>`;
+  h+=c.players.map((p,i)=>`<div class="mg-row"><span class="nm">${esc(p)}<small class="muted">Gesamt ${tot[i]}</small></span><button class="step" onclick="mgStep(${i},-1)">−</button><span class="val">${d.st[i][cur]??'–'}</span><button class="step" onclick="mgStep(${i},1)">+</button></div>`).join('');
+  h+='</div>';
+  let t=`<thead><tr><th>Bahn</th>${c.players.map(p=>`<th>${esc(p)}</th>`).join('')}</tr></thead><tbody>`;
+  for(let n=0;n<d.holes;n++)t+=`<tr class="click${n===cur?' cur':''}" onclick="mgJump(${n})"><th>${n+1}</th>${d.st.map(a=>`<td>${a[n]??'·'}</td>`).join('')}</tr>`;
+  t+=`<tr class="total"><th>Gesamt</th>${tot.map(v=>`<td>${v}</td>`).join('')}</tr></tbody>`;
+  return h+`<div class="tbl"><table class="sheet">${t}</table></div>`;
+}
+
+/* ---------- Wikingerschach ---------- */
+function kbWin(i){S.current.data.rounds.push(i);save();render()}
+function kbUndo(){S.current.data.rounds.pop();save();render()}
+function kbV(c){
+  const d=c.data,w=totals(c),max=Math.max(...w),won=max>=d.target;
+  let h='';
+  if(won)h+=`<div class="card winner">🏆 <b>${c.players.filter((_,i)=>w[i]===max).map(esc).join(' & ')}</b> hat gewonnen!</div>`;
+  h+=`<p class="muted">Wer zuerst ${d.target} Runde${d.target>1?'n':''} gewinnt, gewinnt das Spiel.</p><div class="kb-grid">`;
+  h+=c.players.map((p,i)=>`<div class="card kb"><b>${esc(p)}</b><div class="big">${w[i]}</div><div class="pips">${'●'.repeat(Math.min(w[i],d.target))}${'○'.repeat(Math.max(0,d.target-w[i]))}</div><button class="primary"${won?' disabled':''} onclick="kbWin(${i})">Runde gewonnen</button></div>`).join('');
+  h+='</div>';
+  if(d.rounds.length)h+=`<div class="card"><h2>Verlauf</h2><ol class="rank">${d.rounds.map(r=>`<li>${esc(c.players[r])}</li>`).join('')}</ol><button class="danger wide" onclick="kbUndo()">Letzte Runde löschen</button></div>`;
+  return h;
+}
+
+/* ---------- Allgemein ---------- */
+function totals(c){
+  const d=c.data;
+  switch(c.game){
+    case 'kniffel':return d.s.map(s=>knCalc(s).total);
+    case 'rummikub':return c.players.map((_,i)=>d.rounds.reduce((a,r)=>a+rkPoints(r)[i],0));
+    case 'minigolf':return d.st.map(a=>a.reduce((x,y)=>x+(y||0),0));
+    case 'kubb':return c.players.map((_,i)=>d.rounds.filter(r=>r===i).length);
+  }
+}
+function incomplete(c){
+  const d=c.data;
+  switch(c.game){
+    case 'kniffel':return d.s.some(s=>[...KN_UP,...KN_LO].some(r=>s[r.k]==null))?'Es sind noch nicht alle Felder ausgefüllt.':'';
+    case 'rummikub':return d.rounds.length?'':'Es wurde noch keine Runde eingetragen.';
+    case 'minigolf':return d.st.some(a=>a.some(v=>v==null))?'Es sind noch nicht alle Bahnen eingetragen.':'';
+    case 'kubb':return Math.max(...totals(c))<d.target?'Noch hat niemand die nötigen Runden gewonnen.':'';
+  }
+}
+function info(c){
+  const d=c.data;
+  return {kniffel:'',rummikub:`${d.rounds?.length} Runde${d.rounds?.length===1?'':'n'}`,minigolf:`${d.holes} Bahnen`,kubb:`auf ${d.target} Siege`}[c.game];
+}
+
+function startSetup(k){
+  const last=S.history.find(e=>e.game===k);
+  view={name:'setup',game:k,sel:last?last.players.filter(p=>S.players.includes(p)):[],holes:18,target:3,edit:false};
+  render();window.scrollTo(0,0);
+}
+function toggleSel(i){const p=S.players[i],n=view.sel.indexOf(p);n>=0?view.sel.splice(n,1):view.sel.push(p);render()}
+function addPlayer(){
+  const e=document.getElementById('np'),p=e.value.trim();
+  if(!p)return;
+  if(!S.players.includes(p)){S.players.push(p);save()}
+  if(!view.sel.includes(p))view.sel.push(p);
+  render();document.getElementById('np').focus();
+}
+function delPlayer(i){
+  const p=S.players[i];
+  if(!confirm(`„${p}“ aus der Namensliste entfernen? (Die Historie bleibt erhalten.)`))return;
+  S.players.splice(i,1);view.sel=view.sel.filter(x=>x!==p);save();render();
+}
+function startGame(){
+  const v=view,pl=[...v.sel];
+  if(S.current&&!confirm('Es läuft noch ein anderes Spiel. Soll es verworfen werden?'))return;
+  const data={
+    kniffel:()=>({s:pl.map(()=>({}))}),
+    rummikub:()=>({rounds:[]}),
+    minigolf:()=>({holes:v.holes,cur:0,st:pl.map(()=>Array(v.holes).fill(null))}),
+    kubb:()=>({target:v.target,rounds:[]})
+  }[v.game]();
+  S.current={game:v.game,players:pl,started:Date.now(),data};
+  save();view={name:'play'};render();window.scrollTo(0,0);
+}
+function discard(){if(confirm('Laufendes Spiel verwerfen? Es wird nicht gespeichert.')){S.current=null;save();go('home')}}
+function finishGame(){
+  const c=S.current,miss=incomplete(c);
+  if(!confirm((miss?miss+'\n\n':'')+'Spiel beenden und in der Historie speichern?'))return;
+  const sc=totals(c),best=GAMES[c.game].best==='low'?Math.min(...sc):Math.max(...sc);
+  S.history.unshift({id:Date.now(),game:c.game,date:Date.now(),started:c.started,players:c.players,scores:sc,winners:c.players.filter((_,i)=>sc[i]===best),info:info(c)});
+  knPick=null;S.current=null;save();view={name:'history',filter:'all'};render();window.scrollTo(0,0);
+}
+function delEntry(id){if(confirm('Diesen Eintrag aus der Historie löschen?')){S.history=S.history.filter(e=>e.id!==id);save();render()}}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify({players:S.players,history:S.history},null,1)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='spielebuch-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+}
+function importData(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);if(!Array.isArray(d.history))throw 0;
+      if(!confirm(`${d.history.length} Spiele importieren? Vorhandene Einträge bleiben erhalten, doppelte werden übersprungen.`))return;
+      const ids=new Set(S.history.map(e=>e.id));
+      d.history.forEach(e=>{if(!ids.has(e.id)&&GAMES[e.game])S.history.push(e)});
+      S.history.sort((a,b)=>b.date-a.date);
+      (d.players||[]).forEach(p=>{if(!S.players.includes(p))S.players.push(p)});
+      save();render();
+    }catch(e){alert('Die Datei konnte nicht gelesen werden.')}
+  };
+  r.readAsText(f);inp.value='';
+}
+
+/* ---------- Ansichten ---------- */
+function homeV(){
+  let h='';
+  if(S.current){
+    const c=S.current,g=GAMES[c.game];
+    h+=`<div class="card resume"><div><b>${g.ico} ${g.name} läuft noch</b><br><small class="muted">${c.players.map(esc).join(', ')} · seit ${fmtDate(c.started)}</small></div><div class="row"><button class="primary" onclick="go('play')">Weiterspielen</button><button class="danger" onclick="discard()">Verwerfen</button></div></div>`;
+  }
+  h+='<div class="grid">'+Object.entries(GAMES).map(([k,g])=>`<button class="tile" onclick="startSetup('${k}')"><span class="ico">${g.ico}</span><b>${g.name}</b><small>${g.desc}</small></button>`).join('')+'</div>';
+  h+=`<a href="rummi.html" class="wide online"><span class="ico">🌐</span><span><b>Rummikub online</b><br><small class="muted">1 gegen 1, jeder am eigenen Handy</small></span></a>`;
+  h+=`<button class="wide" onclick="view={name:'history',filter:'all'};render()">📜 Historie &amp; Statistik <span class="muted">(${S.history.length})</span></button>`;
+  return h;
+}
+function setupV(){
+  const v=view,min=GAMES[v.game].min,kubb=v.game==='kubb';
+  let h=`<div class="card"><h2>${kubb?'Wer spielt gegeneinander?':'Wer spielt mit?'}</h2><p class="muted">Antippen zum Auswählen – die Reihenfolge ist die Spielreihenfolge.${kubb?' Statt Namen gehen auch Teams.':''}</p><div class="chips">`;
+  h+=S.players.map((p,i)=>{const n=v.sel.indexOf(p);return `<button class="chip${n>=0?' on':''}" onclick="${v.edit?`delPlayer(${i})`:`toggleSel(${i})`}">${n>=0&&!v.edit?`<span class="num">${n+1}</span>`:''}${esc(p)}${v.edit?' ✕':''}</button>`}).join('');
+  h+=`</div><div class="row add"><input id="np" type="text" placeholder="${kubb?'Neuer Name oder Team':'Neuer Name'}" enterkeyhint="done" onkeydown="if(event.key==='Enter')addPlayer()"><button onclick="addPlayer()">Hinzufügen</button></div>`;
+  if(S.players.length)h+=`<button class="ghost small" style="margin-top:8px" onclick="view.edit=!view.edit;render()">${v.edit?'✓ Fertig':'Namen bearbeiten'}</button>`;
+  h+='</div>';
+  if(v.game==='minigolf')h+=`<div class="card"><h2>Anzahl Bahnen</h2><div class="seg">${[9,12,18].map(n=>`<button class="${v.holes===n?'on':''}" onclick="view.holes=${n};render()">${n}</button>`).join('')}</div></div>`;
+  if(kubb)h+=`<div class="card"><h2>Gewinnsätze</h2><div class="seg">${[1,2,3,4,5].map(n=>`<button class="${v.target===n?'on':''}" onclick="view.target=${n};render()">${n}</button>`).join('')}</div></div>`;
+  const ok=v.sel.length>=min;
+  h+=`<button class="primary wide"${ok?'':' disabled'} onclick="startGame()">Spiel starten${ok?'':` (mind. ${min} ${kubb?'Teams':'Spieler'})`}</button>`;
+  return h;
+}
+function playV(){
+  const c=S.current,g=GAMES[c.game],tot=totals(c);
+  const best=g.best==='low'?Math.min(...tot):Math.max(...tot),any=tot.some(v=>v!==0);
+  let h=`<div class="standings">${c.players.map((p,i)=>`<span class="${any&&tot[i]===best&&c.players.length>1?'lead':''}">${any&&tot[i]===best&&c.players.length>1?'👑 ':''}${esc(p)} <b>${tot[i]}</b></span>`).join('')}</div>`;
+  h+={kniffel:knV,rummikub:rkV,minigolf:mgV,kubb:kbV}[c.game](c);
+  h+=`<div class="actions"><button class="primary wide" onclick="finishGame()">Spiel beenden &amp; speichern</button><button class="danger wide" onclick="discard()">Spiel verwerfen</button></div>`;
+  return h;
+}
+function entryV(e){
+  const g=GAMES[e.game];
+  const order=e.players.map((p,i)=>({p,s:e.scores[i]})).sort((a,b)=>g.best==='low'?a.s-b.s:b.s-a.s);
+  return `<div class="card entry"><div class="eh"><b>${g.ico} ${g.name}</b><small class="muted">${fmtDate(e.date)}${e.info?' · '+esc(e.info):''}</small><button class="ghost small danger" onclick="delEntry(${e.id})" aria-label="Löschen">✕</button></div><ol class="rank">${order.map(o=>`<li class="${e.winners.includes(o.p)?'w':''}"><div><span>${e.winners.includes(o.p)?'🏆 ':''}${esc(o.p)}</span><span>${o.s}</span></div></li>`).join('')}</ol></div>`;
+}
+function histV(){
+  const f=view.filter||'all',list=S.history.filter(e=>f==='all'||e.game===f);
+  let h=`<div class="seg wrap" style="margin-bottom:14px">${[['all','Alle'],...Object.entries(GAMES).map(([k,g])=>[k,g.ico+' '+g.name])].map(([k,l])=>`<button class="${f===k?'on':''}" onclick="view.filter='${k}';render()">${l}</button>`).join('')}</div>`;
+  if(!list.length)h+='<div class="card empty">Noch keine Spiele gespeichert.</div>';
+  else{
+    const st={};
+    list.forEach(e=>{e.players.forEach(p=>{st[p]=st[p]||{n:0,w:0};st[p].n++});if(e.players.length>1)e.winners.forEach(p=>st[p].w++)});
+    const rows=Object.entries(st).sort((a,b)=>b[1].w-a[1].w||a[1].n-b[1].n);
+    h+=`<div class="card"><h2>Statistik</h2><table class="stats"><tr><th>Spieler</th><th>Spiele</th><th>Siege</th><th>Quote</th></tr>${rows.map(([p,s])=>`<tr><td>${esc(p)}</td><td>${s.n}</td><td>${s.w}</td><td>${Math.round(s.w/s.n*100)} %</td></tr>`).join('')}</table><p class="muted" style="margin:8px 0 0;font-size:13px">Siege zählen nur bei Spielen mit mehreren Teilnehmern.</p></div>`;
+    h+=list.map(entryV).join('');
+  }
+  h+=`<div class="card"><h2>Sicherung</h2><p class="muted">Die Daten liegen nur auf diesem Gerät im Browser. Mit einer Sicherung kannst du sie auf ein anderes Gerät übertragen.</p><div class="row"><button onclick="exportData()">⬇︎ Exportieren</button><label class="btn">⬆︎ Importieren<input type="file" accept=".json,application/json" hidden onchange="importData(this)"></label></div></div>`;
+  return h;
+}
+
+function go(n){knPick=null;view={name:n};render();window.scrollTo(0,0)}
+function render(){
+  const keep=[...document.querySelectorAll('.tbl')].map(e=>e.scrollLeft);
+  let title='Spielebuch',back=false,html='';
+  if(view.name==='setup'){title=GAMES[view.game].name;back=true;html=setupV()}
+  else if(view.name==='play'){if(!S.current){view={name:'home'};return render()}title=GAMES[S.current.game].ico+' '+GAMES[S.current.game].name;back=true;html=playV()}
+  else if(view.name==='history'){title='Historie';back=true;html=histV()}
+  else html=homeV();
+  document.getElementById('hdr').innerHTML=(back?`<button class="ghost" onclick="go('home')">‹ Start</button>`:'')+`<h1>${esc(title)}</h1>`;
+  document.getElementById('app').innerHTML=html;
+  document.querySelectorAll('.tbl').forEach((e,i)=>{if(keep[i])e.scrollLeft=keep[i]});
+}
+render();
+</script>
+</body>
+</html>
