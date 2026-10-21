@@ -24,7 +24,7 @@ input{font:inherit;padding:12px;border-radius:12px;border:1px solid var(--line);
 a{color:inherit}
 
 /* Lobby */
-.lobby{min-height:100%;background:var(--paper);padding:calc(16px + env(safe-area-inset-top)) 16px 30px}
+.lobby{min-height:100vh;background:var(--paper);padding:calc(16px + env(safe-area-inset-top)) 16px 30px}
 .lobby .wrap{max-width:460px;margin:0 auto}
 .lobby h1{font-size:28px;margin:8px 0 4px}
 .lobby .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0}
@@ -35,6 +35,13 @@ a{color:inherit}
 .code{font-size:44px;letter-spacing:10px;font-weight:800;text-align:center;margin:6px 0;font-family:ui-monospace,Menlo,monospace}
 .back{color:var(--muted);text-decoration:none;font-size:15px}
 .err{color:var(--red);font-size:14px;margin-top:8px}
+.stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:8px 0}
+.stepper button{width:48px;height:48px;padding:0;font-size:24px;font-weight:700}
+.stepper b{font-size:30px;min-width:48px;text-align:center}
+.presets{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.presets button{padding:6px 12px;font-size:14px}
+.presets button.on{background:var(--accent);color:#fff}
+.nlabel{font-size:14px;color:var(--muted);text-align:center}
 
 /* Spiel */
 .game{display:flex;flex-direction:column;height:100dvh;height:100vh;height:100dvh}
@@ -126,11 +133,13 @@ function rnd(n,alpha='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'){let s='';const a=new Ui
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function flash(m){flashMsg=m;clearTimeout(flashT);flashT=setTimeout(()=>{flashMsg='';render()},3500);render()}
 
+const N_MIN=7,N_MAX=30,curN=()=>Math.max(N_MIN,Math.min(N_MAX,(G&&G.n)||14));
 function deal(names,prev){
+  const n=curN();
   const pool=shuffle([...Array(106).keys()]);
   const start=prev?1-prev.start:(Math.random()<.5?0:1);
-  const s={gid:rnd(8),seq:(prev?prev.seq:0)+1,names,pool,racks:[[],[]],board:[],turn:start,start,first:[false,false],passes:0,last:[],log:[],over:null,tally:prev?prev.tally:[0,0],wins:prev?prev.wins:[0,0],started:Date.now()};
-  for(let k=0;k<14;k++){s.racks[0].push(s.pool.pop());s.racks[1].push(s.pool.pop())}
+  const s={gid:rnd(8),seq:(prev?prev.seq:0)+1,names,pool,racks:[[],[]],board:[],turn:start,start,n,first:[false,false],passes:0,last:[],log:[],over:null,tally:prev?prev.tally:[0,0],wins:prev?prev.wins:[0,0],started:Date.now()};
+  for(let k=0;k<n;k++){s.racks[0].push(s.pool.pop());s.racks[1].push(s.pool.pop())}
   return s;
 }
 
@@ -275,6 +284,12 @@ function sortRack(mode){
   G.order=[...r].sort((a,b)=>key(a)-key(b)||a-b);save();render();
 }
 
+function setN(v){G.n=Math.max(N_MIN,Math.min(N_MAX,v));save();render()}
+function stepperHTML(){
+  const n=curN();
+  return `<div class="stepper"><button data-act="nminus"${n<=N_MIN?' disabled':''}>−</button><b>${n}</b><button data-act="nplus"${n>=N_MAX?' disabled':''}>+</button></div>
+  <div class="presets">${[10,14,20].map(v=>`<button class="${n===v?'on':''}" data-act="nset" data-arg="${v}">${v}${v===14?' (Standard)':''}</button>`).join('')}</div>`;
+}
 /* ===== Lobby-Aktionen ===== */
 function readName(){const e=document.getElementById('nm');const n=(e?e.value:myName).trim();if(!n){lobbyErr='Bitte gib deinen Namen ein.';render();return null}myName=n.slice(0,20);localStorage.setItem('rummi_name',myName);return myName}
 function createGame(){if(!readName())return;G={code:rnd(4),role:'host',s:null};save();location.hash=G.code;startNet();render()}
@@ -315,7 +330,7 @@ function lobbyV(){
     h+=`<div class="card"><h2>Beitreten</h2><div class="row"><input id="cd" maxlength="4" placeholder="Code" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:4px"><button data-act="join">Beitreten</button></div></div>`;
   }
   if(lobbyErr)h+=`<div class="err">${esc(lobbyErr)}</div>`;
-  h+=`<div class="card"><h2>Kurzregeln</h2><p class="muted">Jeder startet mit 14 Steinen. Reihen: mindestens 3 Steine – gleiche Zahl in verschiedenen Farben oder aufsteigende Zahlen in einer Farbe. Das erste Auslegen muss mindestens 30 Punkte ergeben. Danach darfst du die Reihen auf dem Tisch beliebig umbauen, solange am Ende alles gültig ist. Kannst oder willst du nicht legen, ziehst du einen Stein. Wer zuerst alle Steine los ist, gewinnt.</p></div>`;
+  h+=`<div class="card"><h2>Kurzregeln</h2><p class="muted">Jeder startet normalerweise mit 14 Steinen – wer das Spiel erstellt, kann die Anzahl ändern. Reihen: mindestens 3 Steine – gleiche Zahl in verschiedenen Farben oder aufsteigende Zahlen in einer Farbe. Das erste Auslegen muss mindestens 30 Punkte ergeben. Danach darfst du die Reihen auf dem Tisch beliebig umbauen, solange am Ende alles gültig ist. Kannst oder willst du nicht legen, ziehst du einen Stein. Wer zuerst alle Steine los ist, gewinnt.</p></div>`;
   return h+'</div></div>';
 }
 function waitV(){
@@ -324,6 +339,7 @@ function waitV(){
   <div class="card" style="text-align:center"><h2>${G.role==='host'?'Schick deinem Mitspieler diesen Code':'Verbinde mit Spiel'}</h2><div class="code">${G.code}</div>
   ${G.role==='host'?`<p class="muted" style="word-break:break-all">${esc(url)}</p><button class="primary" style="width:100%" data-act="share">Link teilen</button>`:''}
   <p class="muted" style="margin-top:14px">${esc(status||'Verbinde…')}</p></div>
+  ${G.role==='host'?`<div class="card"><h2 style="text-align:center">Steine zu Beginn</h2>${stepperHTML()}<p class="nlabel" style="margin-top:8px">Weniger Steine = kürzeres Spiel</p></div>`:''}
   <button style="width:100%" data-act="leave">Abbrechen</button>${flashMsg?`<p class="err">${esc(flashMsg)}</p>`:''}</div></div>`;
 }
 function gameV(){
@@ -335,7 +351,7 @@ function gameV(){
   const lastSet=new Set(s.last||[]);
   let h=`<div class="game"><div class="top"><div class="opp"><span class="dot${connected?' on':''}"></span><b>${esc(s.names[o]||'…')}</b><span class="pill">${s.racks[o].length} Steine</span></div><span class="pill">Stapel ${s.pool.length}</span><button class="menu" data-act="menu">☰</button></div>`;
   if(showMenu){
-    h+=`<div class="bar" style="flex-wrap:wrap"><span class="grow">Stand: ${esc(s.names[0])} ${s.tally[0]} · ${esc(s.names[1])} ${s.tally[1]} <span style="opacity:.7">(Siege ${s.wins[0]}:${s.wins[1]})</span></span><button class="small" data-act="share">Link</button><button class="small" data-act="leave">Verlassen</button></div>`;
+    h+=`<div class="bar" style="flex-wrap:wrap"><span class="grow">Stand: ${esc(s.names[0])} ${s.tally[0]} · ${esc(s.names[1])} ${s.tally[1]} <span style="opacity:.7">(Siege ${s.wins[0]}:${s.wins[1]} · Start mit ${s.n||14} Steinen)</span></span><button class="small" data-act="share">Link</button><button class="small" data-act="leave">Verlassen</button></div>`;
     if(s.log.length)h+=`<div class="bar" style="display:block;font-size:13px;opacity:.85">${s.log.slice(0,4).map(esc).join(' · ')}</div>`;
   }
   h+=`<div class="board${mine?'':' watch'}" id="board">`;
@@ -361,6 +377,7 @@ function gameV(){
     const w=s.over.w;
     h+=`<div class="overlay"><div class="card"><h2>${w<0?'Unentschieden':w===m?'🏆 Gewonnen!':`${esc(s.names[w])} gewinnt`}</h2><p class="muted" style="color:var(--muted)">${s.racks[w<0?0:w].length?'Der Stapel ist leer – die wenigsten Punkte auf der Bank gewinnen.':'Alle Steine abgelegt.'}</p>
     <table>${[0,1].map(i=>`<tr><td>${esc(s.names[i])} <small style="color:var(--muted)">(Rest ${s.over.v[i]})</small></td><td>${s.over.pts[i]>0?'+':''}${s.over.pts[i]}</td></tr>`).join('')}<tr><td><b>Gesamtstand</b></td><td>${s.tally[0]} : ${s.tally[1]}</td></tr></table>
+    ${G.role==='host'?`<div class="nlabel">Steine für die nächste Runde</div>${stepperHTML()}`:''}
     <div class="btns"><button class="primary" data-act="rematch">${G.role==='host'?'Neue Runde':'Neue Runde anfragen'}</button><a href="index.html"><button style="width:100%">Zum Spielebuch</button></a><button data-act="leave">Spiel verlassen</button></div></div></div>`;
   }
   return h+'</div>';
@@ -390,7 +407,7 @@ document.addEventListener('click',e=>{
   ({create:createGame,join:()=>joinGame(),joinHash:()=>joinGame(location.hash.slice(1)),resume,leave,share:shareLink,
     menu:()=>{showMenu=!showMenu;render()},
     toset:()=>toSet(+el.dataset.arg),newset:newSet,torack:toRack,clearsel:()=>{sel.clear();render()},
-    reset:resetTurn,end:endTurn,draw:drawTile,sortc:()=>sortRack('c'),sortn:()=>sortRack('n'),rematch}[a]||(()=>{}))();
+    reset:resetTurn,end:endTurn,draw:drawTile,nminus:()=>setN(curN()-1),nplus:()=>setN(curN()+1),nset:()=>setN(+el.dataset.arg),sortc:()=>sortRack('c'),sortn:()=>sortRack('n'),rematch}[a]||(()=>{}))();
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='cd')joinGame()});
 window.addEventListener('hashchange',()=>{if(!peer)render()});
