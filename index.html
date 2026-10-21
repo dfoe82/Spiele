@@ -10,8 +10,8 @@
 <title>Spielebuch</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E">
 <style>
-:root{--bg:#f5f1e8;--card:#fff;--ink:#1d2321;--muted:#6b726f;--line:#e2ddd2;--accent:#1f6f5c;--on:#fff;--accent2:#e6f0ec;--gold:#b7801c;--red:#b8442f}
-@media (prefers-color-scheme:dark){:root{--bg:#121614;--card:#1c2320;--ink:#ecefed;--muted:#9aa39f;--line:#2d3632;--accent:#4fb393;--on:#0e221b;--accent2:#22352e;--gold:#e0b050;--red:#e47c66}}
+:root{--bg:#f5f1e8;--card:#fff;--ink:#1d2321;--muted:#6b726f;--line:#e2ddd2;--accent:#1f6f5c;--on:#fff;--accent2:#e6f0ec;--gold:#b7801c;--red:#b8442f;--wood:#e9cf9c;--woodline:#5a3d1c;--stoneW:#fbf8f1;--stoneB:#26221f;--hi:#1f6f5c}
+@media (prefers-color-scheme:dark){:root{--bg:#121614;--card:#1c2320;--ink:#ecefed;--muted:#9aa39f;--line:#2d3632;--accent:#4fb393;--on:#0e221b;--accent2:#22352e;--gold:#e0b050;--red:#e47c66;--wood:#6e5130;--woodline:#e8d3ad;--stoneW:#f3eee4;--stoneB:#141210;--hi:#6fd3ad}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:var(--bg)}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
@@ -128,6 +128,37 @@ table{border-collapse:collapse;width:100%}
 .stats th,.stats td{padding:6px 4px;text-align:right;border-bottom:1px solid var(--line)}
 .stats th:first-child,.stats td:first-child{text-align:left}
 .empty{text-align:center;color:var(--muted);padding:30px 14px}
+/* Mühle */
+.mh-board{background:var(--wood);border-radius:18px;padding:10px;box-shadow:inset 0 0 0 2px rgba(0,0,0,.08);margin-bottom:12px;touch-action:manipulation}
+.mh-board svg{display:block;width:100%;height:auto;max-width:520px;margin:0 auto}
+.mh-board .ln{stroke:var(--woodline);stroke-width:7;fill:none;stroke-linecap:square}
+.mh-board .pt{fill:var(--woodline)}
+.mh-board .hit{fill:transparent;cursor:pointer}
+.mh-board .st{stroke-width:4}
+.mh-board .w{fill:var(--stoneW);stroke:#b9ae9a}
+.mh-board .b{fill:var(--stoneB);stroke:#000}
+.mh-board .sel{stroke:var(--gold);stroke-width:10}
+.mh-board .tgt{fill:var(--hi);opacity:.55}
+.mh-board .rm{stroke:var(--red);stroke-width:10;stroke-dasharray:14 9}
+.mh-board .mill{stroke:var(--gold);stroke-width:7}
+.mh-board .last{stroke:var(--hi);stroke-width:8}
+.mh-p{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;border:2px solid transparent;background:var(--card)}
+.mh-p.on{border-color:var(--accent)}
+.mh-p .nm{flex:1;min-width:0;display:flex;flex-direction:column}
+.mh-p .nm small{color:var(--muted)}
+.mh-dot{width:22px;height:22px;border-radius:50%;flex:0 0 auto;border:2px solid #b9ae9a}
+.mh-dot.b{background:var(--stoneB);border-color:#000}
+.mh-dot.w{background:var(--stoneW)}
+.mh-hand{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;max-width:150px}
+.mh-hand i{width:12px;height:12px;border-radius:50%;display:block;border:1px solid #9c917d}
+.mh-hand i.b{background:var(--stoneB);border-color:#000}
+.mh-hand i.w{background:var(--stoneW)}
+.mh-msg{text-align:center;font-weight:600;font-size:17px;margin:10px 0;min-height:24px;text-wrap:balance}
+.mh-msg.alert{color:var(--red)}
+.mh-tools{display:flex;gap:8px}
+.mh-tools button{flex:1}
+.toggle{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.toggle input{width:24px;height:24px;accent-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -138,7 +169,8 @@ const GAMES={
   kniffel:{name:'Kniffel',ico:'🎲',desc:'Würfelblock',best:'high',min:1},
   rummikub:{name:'Rummikub',ico:'🔢',desc:'Punkte pro Runde',best:'high',min:2},
   minigolf:{name:'Minigolf',ico:'⛳',desc:'Schläge pro Bahn',best:'low',min:1},
-  kubb:{name:'Wikingerschach',ico:'🪵',desc:'Gewonnene Runden',best:'high',min:2}
+  kubb:{name:'Wikingerschach',ico:'🪵',desc:'Gewonnene Runden',best:'high',min:2},
+  muehle:{name:'Mühle',ico:'⚪',desc:'2 Spieler, ein Bildschirm',best:'high',min:2,max:2}
 };
 const KEY='spielebuch_v1';
 let S=load();
@@ -211,7 +243,7 @@ function knSheet(c){
 }
 
 /* ---------- Rummikub ---------- */
-function rkPoints(r){const sum=r.rem.reduce((a,b)=>a+b,0);return r.rem.map((x,i)=>i===r.w?sum:-x)}
+function rkPoints(r){return r.rem.map((x,i)=>i===r.w?0:-x)}
 function rkWin(){
   const w=document.querySelector('input[name=rw]:checked');
   S.current.players.forEach((_,i)=>{const e=document.getElementById('rk'+i);e.disabled=!!w&&+w.value===i;if(e.disabled)e.value=''});
@@ -226,7 +258,7 @@ function rkAdd(){
 function rkUndo(){if(confirm('Letzte Runde löschen?')){S.current.data.rounds.pop();save();render()}}
 function rkV(c){
   const d=c.data,tot=totals(c);
-  let h=`<div class="card"><h2>Runde ${d.rounds.length+1}</h2><p class="muted">Gewinner markieren, bei den anderen den Wert der übrigen Steine eintragen (Joker = 30).</p>`;
+  let h=`<div class="card"><h2>Runde ${d.rounds.length+1}</h2><p class="muted">Gewinner markieren, bei den anderen den Wert der übrigen Steine eintragen (Joker = 25). Der Gewinner bekommt 0, die anderen ihren Restwert als Minuspunkte.</p>`;
   h+=c.players.map((p,i)=>`<div class="rk-row"><label><input type="radio" name="rw" value="${i}" onchange="rkWin()">${esc(p)}</label><input type="number" inputmode="numeric" min="0" id="rk${i}" placeholder="Restwert"></div>`).join('');
   h+=`<button class="primary wide" onclick="rkAdd()">Runde eintragen</button></div>`;
   if(d.rounds.length){
@@ -272,6 +304,79 @@ function kbV(c){
   return h;
 }
 
+/* ---------- Mühle ---------- */
+const MH_P=[];[[0,0,6],[1,1,5],[2,2,4]].forEach(([r,a,b])=>{const m=(a+b)/2;[[a,a],[m,a],[b,a],[b,m],[b,b],[m,b],[a,b],[a,m]].forEach(p=>MH_P.push(p))});
+const MH_ADJ=MH_P.map((_,i)=>{const r=Math.floor(i/8),k=i%8,a=[r*8+(k+1)%8,r*8+(k+7)%8];if(k%2){if(r>0)a.push(i-8);if(r<2)a.push(i+8)}return a});
+const MH_MILLS=[];for(let r=0;r<3;r++)for(const k of [0,2,4,6])MH_MILLS.push([r*8+k,r*8+k+1,r*8+(k+2)%8]);for(const k of [1,3,5,7])MH_MILLS.push([k,k+8,k+16]);
+function mhNew(fly){return {b:Array(24).fill(-1),hand:[9,9],turn:0,sel:-1,remove:false,fly,over:null,moves:0,last:-1,hist:[]}}
+const mhCount=(d,p)=>d.hand[p]+d.b.filter(x=>x===p).length;
+const mhInMill=(d,i)=>d.b[i]>=0&&MH_MILLS.some(m=>m.includes(i)&&m.every(j=>d.b[j]===d.b[i]));
+function mhRemovable(d,p){const st=d.b.map((x,i)=>x===p?i:-1).filter(i=>i>=0);const free=st.filter(i=>!mhInMill(d,i));return free.length?free:st}
+const mhFlying=(d,p)=>d.fly&&d.hand[p]===0&&d.b.filter(x=>x===p).length===3;
+function mhTargets(d,from){const p=d.b[from];return mhFlying(d,p)?d.b.map((x,i)=>x<0?i:-1).filter(i=>i>=0):MH_ADJ[from].filter(j=>d.b[j]<0)}
+function mhCanMove(d,p){if(d.hand[p]>0)return true;return d.b.some((x,i)=>x===p&&mhTargets(d,i).length)}
+function mhNext(d){
+  d.turn=1-d.turn;d.sel=-1;d.moves++;
+  const p=d.turn;
+  if(d.hand[p]===0&&d.b.filter(x=>x===p).length<3)d.over={w:1-p,why:'zu wenige Steine'};
+  else if(!mhCanMove(d,p))d.over={w:1-p,why:'eingeklemmt'};
+}
+function mhSnap(d){const {hist,...rest}=d;d.hist.push(JSON.stringify(rest));if(d.hist.length>60)d.hist.shift()}
+function mhTap(i){
+  const d=S.current.data,p=d.turn;if(d.over)return;
+  if(d.remove){
+    if(!mhRemovable(d,1-p).includes(i))return mhFlash('Diesen Stein darfst du nicht nehmen – er steht in einer Mühle.');
+    mhSnap(d);d.b[i]=-1;d.remove=false;d.last=-1;mhNext(d);return mhSave();
+  }
+  if(d.hand[p]>0){
+    if(d.b[i]>=0)return;
+    mhSnap(d);d.b[i]=p;d.hand[p]--;d.last=i;mhAfter(d,i);return mhSave();
+  }
+  if(d.b[i]===p){d.sel=d.sel===i?-1:i;return mhSave(true)}
+  if(d.sel>=0&&d.b[i]<0){
+    if(!mhTargets(d,d.sel).includes(i))return mhFlash(mhFlying(d,p)?'':'Steine ziehen nur entlang der Linie auf einen freien Nachbarpunkt.');
+    mhSnap(d);d.b[i]=p;d.b[d.sel]=-1;d.sel=-1;d.last=i;mhAfter(d,i);return mhSave();
+  }
+  if(d.b[i]===1-p)mhFlash('Das ist ein Stein von '+S.current.players[1-p]+'.');
+}
+function mhAfter(d,i){
+  if(mhInMill(d,i)&&d.b.some(x=>x===1-d.turn)){d.remove=true;d.sel=-1}else mhNext(d);
+}
+function mhUndo(){const d=S.current.data;if(!d.hist.length)return;const prev=JSON.parse(d.hist.pop());Object.assign(d,prev);mhSave()}
+function mhDraw(){if(!confirm('Partie als Remis beenden?'))return;const d=S.current.data;d.over={w:-1,why:'Remis'};mhSave()}
+let mhMsg='',mhMsgT=null;
+function mhFlash(m){if(!m)return;mhMsg=m;clearTimeout(mhMsgT);mhMsgT=setTimeout(()=>{mhMsg='';render()},2600);render()}
+function mhSave(quiet){if(!quiet)mhMsg='';save();render()}
+function mhV(c){
+  const d=c.data,p=d.turn,cls=['w','b'],X=i=>60+MH_P[i][0]*100,Y=i=>60+MH_P[i][1]*100;
+  const rm=d.remove?new Set(mhRemovable(d,1-p)):new Set(),tg=d.sel>=0?new Set(mhTargets(d,d.sel)):new Set();
+  const mills=new Set();MH_MILLS.forEach(m=>{if(d.b[m[0]]>=0&&m.every(j=>d.b[j]===d.b[m[0]]))m.forEach(j=>mills.add(j))});
+  const pl=i=>{const onB=d.b.filter(x=>x===i).length;
+    return `<div class="mh-p${!d.over&&p===i?' on':''}"><span class="mh-dot ${cls[i]}"></span><span class="nm"><b>${esc(c.players[i])}</b><small>${i?'Schwarz':'Weiß'} · ${onB} auf dem Brett${mhFlying(d,i)?' · darf springen':''}</small></span><span class="mh-hand" aria-label="${d.hand[i]} Steine zum Setzen">${('<i class="'+cls[i]+'"></i>').repeat(d.hand[i])}</span></div>`};
+  let svg=`<svg viewBox="0 0 720 720" role="img" aria-label="Mühlebrett">`;
+  [0,1,2].forEach(r=>{const a=60+r*100,w=600-r*200;svg+=`<rect class="ln" x="${a}" y="${a}" width="${w}" height="${w}"/>`});
+  svg+=`<path class="ln" d="M360 60V260M360 460V660M60 360H260M460 360H660"/>`;
+  MH_P.forEach((_,i)=>{
+    const x=X(i),y=Y(i),v=d.b[i];
+    svg+=`<g onclick="mhTap(${i})">`;
+    if(v<0){svg+=`<circle class="pt" cx="${x}" cy="${y}" r="11"/>`;if(tg.has(i))svg+=`<circle class="tgt" cx="${x}" cy="${y}" r="26"/>`}
+    else svg+=`<circle class="st ${cls[v]}${d.sel===i?' sel':rm.has(i)?' rm':mills.has(i)?' mill':i===d.last?' last':''}" cx="${x}" cy="${y}" r="38"/>`;
+    svg+=`<circle class="hit" cx="${x}" cy="${y}" r="50"/></g>`;
+  });
+  svg+='</svg>';
+  const nm=c.players[p],other=c.players[1-p];
+  let msg=mhMsg,alert=!!mhMsg;
+  if(!msg){
+    if(d.over)msg=d.over.w<0?'Remis – unentschieden.':`🏆 ${c.players[d.over.w]} gewinnt (${c.players[1-d.over.w]} ${d.over.why==='eingeklemmt'?'kann nicht mehr ziehen':'hat nur noch 2 Steine'}).`;
+    else if(d.remove){msg=`Mühle! ${nm} nimmt einen Stein von ${other}.`;alert=true}
+    else if(d.hand[p]>0)msg=`${nm} setzt einen Stein (${d.hand[p]} übrig).`;
+    else if(d.sel>=0)msg=mhFlying(d,p)?`${nm} springt – freien Punkt antippen.`:`${nm} zieht – grün markierten Punkt antippen.`;
+    else msg=`${nm} ist am Zug – Stein antippen.`;
+  }
+  return `${pl(1)}<div class="mh-msg${alert?' alert':''}">${msg}</div><div class="mh-board">${svg}</div>${pl(0)}
+  <div class="mh-tools" style="margin-top:12px"><button onclick="mhUndo()"${d.hist.length?'':' disabled'}>↶ Rückgängig</button><button onclick="mhDraw()"${d.over?' disabled':''}>Remis</button></div>`;
+}
+
 /* ---------- Allgemein ---------- */
 function totals(c){
   const d=c.data;
@@ -280,6 +385,7 @@ function totals(c){
     case 'rummikub':return c.players.map((_,i)=>d.rounds.reduce((a,r)=>a+rkPoints(r)[i],0));
     case 'minigolf':return d.st.map(a=>a.reduce((x,y)=>x+(y||0),0));
     case 'kubb':return c.players.map((_,i)=>d.rounds.filter(r=>r===i).length);
+    case 'muehle':return d.over?[0,1].map(i=>d.over.w===i?1:0):[0,1].map(i=>mhCount(d,i));
   }
 }
 function incomplete(c){
@@ -289,11 +395,12 @@ function incomplete(c){
     case 'rummikub':return d.rounds.length?'':'Es wurde noch keine Runde eingetragen.';
     case 'minigolf':return d.st.some(a=>a.some(v=>v==null))?'Es sind noch nicht alle Bahnen eingetragen.':'';
     case 'kubb':return Math.max(...totals(c))<d.target?'Noch hat niemand die nötigen Runden gewonnen.':'';
+    case 'muehle':return d.over?'':'Die Partie ist noch nicht entschieden – gespeichert wird der aktuelle Stand (mehr Steine = vorn).';
   }
 }
 function info(c){
   const d=c.data;
-  return {kniffel:'',rummikub:`${d.rounds?.length} Runde${d.rounds?.length===1?'':'n'}`,minigolf:`${d.holes} Bahnen`,kubb:`auf ${d.target} Siege`}[c.game];
+  return {kniffel:'',rummikub:`${d.rounds?.length} Runde${d.rounds?.length===1?'':'n'}`,minigolf:`${d.holes} Bahnen`,kubb:`auf ${d.target} Siege`,muehle:d.over?(d.over.w<0?'Remis':`${d.over.why}, ${d.moves} Züge`):`${d.moves} Züge`}[c.game];
 }
 
 function startSetup(k){
@@ -321,7 +428,8 @@ function startGame(){
     kniffel:()=>({s:pl.map(()=>({}))}),
     rummikub:()=>({rounds:[]}),
     minigolf:()=>({holes:v.holes,cur:0,st:pl.map(()=>Array(v.holes).fill(null))}),
-    kubb:()=>({target:v.target,rounds:[]})
+    kubb:()=>({target:v.target,rounds:[]}),
+    muehle:()=>mhNew(v.fly!==false)
   }[v.game]();
   S.current={game:v.game,players:pl,started:Date.now(),data};
   save();view={name:'play'};render();window.scrollTo(0,0);
@@ -379,15 +487,17 @@ function setupV(){
   h+='</div>';
   if(v.game==='minigolf')h+=`<div class="card"><h2>Anzahl Bahnen</h2><div class="seg">${[9,12,18].map(n=>`<button class="${v.holes===n?'on':''}" onclick="view.holes=${n};render()">${n}</button>`).join('')}</div></div>`;
   if(kubb)h+=`<div class="card"><h2>Gewinnsätze</h2><div class="seg">${[1,2,3,4,5].map(n=>`<button class="${v.target===n?'on':''}" onclick="view.target=${n};render()">${n}</button>`).join('')}</div></div>`;
-  const ok=v.sel.length>=min;
-  h+=`<button class="primary wide"${ok?'':' disabled'} onclick="startGame()">Spiel starten${ok?'':` (mind. ${min} ${kubb?'Teams':'Spieler'})`}</button>`;
+  if(v.game==='muehle')h+=`<div class="card"><label class="toggle"><span><b>Springen erlaubt</b><br><small class="muted">Wer nur noch 3 Steine hat, darf auf jeden freien Punkt springen.</small></span><input type="checkbox" id="mhfly" ${v.fly!==false?'checked':''} onchange="view.fly=this.checked"></label></div>`;
+  const max=GAMES[v.game].max,ok=v.sel.length>=min&&(!max||v.sel.length<=max);
+  h+=`<button class="primary wide"${ok?'':' disabled'} onclick="startGame()">Spiel starten${ok?'':max&&v.sel.length>max?` (genau ${max} Spieler)`:` (mind. ${min} ${kubb?'Teams':'Spieler'})`}</button>`;
+  if(v.game==='muehle'&&ok)h+=`<p class="muted" style="text-align:center;margin-top:8px">${esc(v.sel[0])} spielt Weiß und beginnt.</p>`;
   return h;
 }
 function playV(){
   const c=S.current,g=GAMES[c.game],tot=totals(c);
   const best=g.best==='low'?Math.min(...tot):Math.max(...tot),any=tot.some(v=>v!==0);
-  let h=`<div class="standings">${c.players.map((p,i)=>`<span class="${any&&tot[i]===best&&c.players.length>1?'lead':''}">${any&&tot[i]===best&&c.players.length>1?'👑 ':''}${esc(p)} <b>${tot[i]}</b></span>`).join('')}</div>`;
-  h+={kniffel:knV,rummikub:rkV,minigolf:mgV,kubb:kbV}[c.game](c);
+  let h=c.game==='muehle'?'':`<div class="standings">${c.players.map((p,i)=>`<span class="${any&&tot[i]===best&&c.players.length>1?'lead':''}">${any&&tot[i]===best&&c.players.length>1?'👑 ':''}${esc(p)} <b>${tot[i]}</b></span>`).join('')}</div>`;
+  h+={kniffel:knV,rummikub:rkV,minigolf:mgV,kubb:kbV,muehle:mhV}[c.game](c);
   h+=`<div class="actions"><button class="primary wide" onclick="finishGame()">Spiel beenden &amp; speichern</button><button class="danger wide" onclick="discard()">Spiel verwerfen</button></div>`;
   return h;
 }

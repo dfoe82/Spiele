@@ -57,6 +57,18 @@ a{color:inherit}
 .empty-board{color:rgba(255,255,255,.55);text-align:center;width:100%;margin-top:30px;font-size:15px}
 .set{display:flex;gap:2px;padding:4px;border-radius:9px;background:rgba(0,0,0,.18);border:2px solid transparent;align-items:center}
 .set.bad{border-color:#ff7a62;background:rgba(200,67,47,.25)}
+.set.fit{border-color:var(--gold);background:rgba(245,197,66,.18);box-shadow:0 0 0 4px rgba(245,197,66,.22)}
+.set.dim{opacity:.45}
+.set.over,.newzone.over,.rack.over{outline:3px solid var(--gold);outline-offset:2px}
+.fitbtn{margin-left:4px;background:var(--gold);color:#2a2200;font-weight:700;font-size:13px;padding:0 10px;height:38px;border-radius:999px;white-space:nowrap}
+.newzone{width:100%;min-height:58px;border-radius:12px;border:2px dashed rgba(255,255,255,.35);background:transparent;color:rgba(255,255,255,.8);font-size:14px;padding:8px 12px}
+.newzone.ok{border-color:var(--gold);background:rgba(245,197,66,.16);color:#ffe7a3;font-weight:700;font-size:16px}
+.t{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.t.dragging{opacity:.25}
+.ghost{position:fixed;left:0;top:0;z-index:50;pointer-events:none;display:flex;gap:2px;transform:translate(-50%,-75%) rotate(-5deg) scale(1.12);filter:drop-shadow(0 12px 14px rgba(0,0,0,.45))}
+.ghost .t{transform:none!important}
+.undo{flex:0 0 54px!important;display:flex;align-items:center;justify-content:center;padding:0!important}
+.actions .main{flex:3;font-size:16px;padding:12px}
 .plus{width:28px;height:38px;border-radius:6px;padding:0;background:rgba(255,255,255,.18);color:#fff;font-size:20px;font-weight:700;border:2px dashed rgba(255,255,255,.5)}
 .t{width:34px;height:46px;border-radius:6px;background:var(--tile);border:1px solid var(--tileEdge);box-shadow:0 2px 0 var(--tileShadow);font-weight:800;font-size:20px;padding:0;display:inline-flex;align-items:center;justify-content:center;transition:transform .08s;font-family:Georgia,"Times New Roman",serif;flex:0 0 auto}
 .set .t{width:28px;height:38px;font-size:17px}
@@ -70,6 +82,7 @@ a{color:inherit}
 .bar .hint{color:var(--gold)}
 .bar.turn{background:#24694f}
 .flash{background:var(--red);color:#fff;padding:8px 12px;font-size:14px}
+.flash.ok{background:#2f8a66}
 .dock{background:#2a2219;padding:8px 8px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -4px 12px rgba(0,0,0,.3)}
 .actions{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
 .actions button{padding:9px 11px;font-size:14px;flex:1;white-space:nowrap}
@@ -92,7 +105,7 @@ a{color:inherit}
 /* ===== Steine ===== */
 const COLORS=['#1d1d1f','#1e5bc6','#d77400','#cf2d25'];
 const isJ=id=>id>=104, num=id=>Math.floor(id/8)+1, col=id=>id%4;
-const tileVal=id=>isJ(id)?30:num(id);
+const tileVal=id=>isJ(id)?25:num(id);
 
 function analyze(ids){
   if(ids.length<3)return {ok:false};
@@ -102,17 +115,16 @@ function analyze(ids){
   if(ids.length<=4&&N.every(i=>num(i)===num(N[0]))&&new Set(N.map(col)).size===N.length){
     best={ok:true,value:num(N[0])*ids.length,order:[...N].sort((a,b)=>col(a)-col(b)).concat(Js)};
   }
-  if(N.every(i=>col(i)===col(N[0]))&&new Set(N.map(num)).size===N.length){
-    const s=[...N].sort((a,b)=>num(a)-num(b));
-    let lo=num(s[0]),hi=num(s[s.length-1]),extra=Js.length-((hi-lo+1)-N.length);
-    if(extra>=0){
-      while(extra>0&&hi<13){hi++;extra--}
-      while(extra>0&&lo>1){lo--;extra--}
-      if(extra===0){
-        const js=[...Js],order=[];let v=0;
-        for(let k=lo;k<=hi;k++){const t=s.find(i=>num(i)===k);order.push(t!==undefined?t:js.pop());v+=k}
-        if(!best||v>best.value)best={ok:true,value:v,order};
-      }
+  /* Farbreihe: aufeinanderfolgend, nach der 13 darf wieder die 1 folgen (…12-13-1-2…) */
+  const L=ids.length;
+  if(L<=13&&N.every(i=>col(i)===col(N[0]))&&new Set(N.map(num)).size===N.length){
+    for(let st=1;st<=13;st++){
+      const win=[...Array(L)].map((_,k)=>(st-1+k)%13+1);
+      if(!N.every(i=>win.includes(num(i))))continue;
+      const js=[...Js],order=[];let v=0;
+      for(const k of win){const t=N.find(i=>num(i)===k);order.push(t!==undefined?t:js.pop());v+=k}
+      const wraps=win[0]>win[L-1];
+      if(!best||v>best.value||(v===best.value&&best.wraps&&!wraps))best={ok:true,value:v,order,wraps};
     }
   }
   return best||{ok:false};
@@ -120,10 +132,12 @@ function analyze(ids){
 
 /* ===== Speicher ===== */
 const LS='rummi_v1',PFX='spielebuch-rummi-';
-let myName=localStorage.getItem('rummi_name')||'';
+let myName='';try{myName=localStorage.getItem('rummi_name')||''}catch(e){}
 let G=null;try{G=JSON.parse(localStorage.getItem(LS))}catch(e){}
 function save(){try{if(G)localStorage.setItem(LS,JSON.stringify(G));else localStorage.removeItem(LS)}catch(e){}}
-const me=()=>G.role==='host'?0:1;
+const isLocal=()=>!!(G&&G.role==='local');
+const me=()=>isLocal()?(G.s?G.s.turn:0):G.role==='host'?0:1;
+let cover=false;
 
 /* ===== Laufzeit ===== */
 let peer=null,conn=null,connected=false,status='',W=null,sel=new Set(),live=null,flashMsg='',flashT=null,showMenu=false,lobbyErr='';
@@ -131,14 +145,15 @@ let peer=null,conn=null,connected=false,status='',W=null,sel=new Set(),live=null
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function rnd(n,alpha='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'){let s='';const a=new Uint32Array(n);crypto.getRandomValues(a);for(const x of a)s+=alpha[x%alpha.length];return s}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function flash(m){flashMsg=m;clearTimeout(flashT);flashT=setTimeout(()=>{flashMsg='';render()},3500);render()}
+let flashOk=false;
+function flash(m,ok){flashMsg=m;flashOk=!!ok;clearTimeout(flashT);flashT=setTimeout(()=>{flashMsg='';render()},3500);render()}
 
 const N_MIN=7,N_MAX=30,curN=()=>Math.max(N_MIN,Math.min(N_MAX,(G&&G.n)||14));
 function deal(names,prev){
   const n=curN();
   const pool=shuffle([...Array(106).keys()]);
   const start=prev?1-prev.start:(Math.random()<.5?0:1);
-  const s={gid:rnd(8),seq:(prev?prev.seq:0)+1,names,pool,racks:[[],[]],board:[],turn:start,start,n,first:[false,false],passes:0,last:[],log:[],over:null,tally:prev?prev.tally:[0,0],wins:prev?prev.wins:[0,0],started:Date.now()};
+  const s={gid:rnd(8),seq:(prev?prev.seq:0)+1,names,pool,racks:[[],[]],board:[],turn:start,start,n,first:[false,false],moves:[0,0],drawn:false,passes:0,last:[],log:[],over:null,tally:prev?prev.tally:[0,0],wins:prev?prev.wins:[0,0],started:Date.now()};
   for(let k=0;k<n;k++){s.racks[0].push(s.pool.pop());s.racks[1].push(s.pool.pop())}
   return s;
 }
@@ -198,7 +213,7 @@ function adopt(s){
   if(!G.s||s.seq>G.s.seq){
     const wasMine=G.s&&G.s.turn===me()&&!G.s.over;
     G.s=s;live=null;save();
-    if(!wasMine&&s.turn===me()&&!s.over){try{navigator.vibrate&&navigator.vibrate(150)}catch(e){}flash('Du bist dran!')}
+    if(!wasMine&&s.turn===me()&&!s.over){try{navigator.vibrate&&navigator.vibrate(150)}catch(e){}flash('Du bist dran!',true)}
     if(s.over)record();
   }
 }
@@ -213,14 +228,23 @@ const myTurn=()=>G.s&&G.s.turn===me()&&!G.s.over;
 function sendLive(){send({t:'live',board:W.board})}
 function arrange(){W.board=W.board.filter(x=>x.length).map(st=>{const a=analyze(st);return a.ok?a.order:st})}
 function takeSel(){W.board=W.board.map(st=>st.filter(i=>!sel.has(i)));W.rack=W.rack.filter(i=>!sel.has(i));const ids=[...sel];sel.clear();return ids}
-function toSet(k){if(!sel.size)return;const ids=takeSel();W.board[k].push(...ids);arrange();sendLive();render()}
-function newSet(){if(!sel.size)return;const ids=takeSel();W.board.push(ids);arrange();sendLive();render()}
+function snap(){(W.hist=W.hist||[]).push({board:W.board.map(x=>[...x]),rack:[...W.rack]})}
+function undo(){if(!W||!W.hist||!W.hist.length)return;const h=W.hist.pop();W.board=h.board;W.rack=h.rack;sel.clear();sendLive();render()}
+function toSet(k){if(!sel.size)return;snap();const ids=takeSel();W.board[k].push(...ids);arrange();sendLive();render()}
+function newSet(){if(!sel.size)return;snap();const ids=takeSel();W.board.push(ids);arrange();sendLive();render()}
 function toRack(){
   const start=G.s.racks[me()];
   if([...sel].some(i=>!start.includes(i)))return flash('Nur Steine, die du in diesem Zug gelegt hast, dürfen zurück auf die Bank.');
-  const ids=takeSel();W.rack.push(...ids);arrange();sendLive();render();
+  snap();const ids=takeSel();W.rack.push(...ids);arrange();sendLive();render();
+  return true;
 }
 function resetTurn(){W=null;ensureW();sendLive();render()}
+function rowFits(k,ids){
+  const s=G.s,row=W.board[k];if(!row||!ids.length||ids.every(i=>row.includes(i)))return null;
+  if(!analyze(row.filter(i=>!ids.includes(i)).concat(ids)).ok)return false;
+  if(!s.first[me()]){const old=new Set(s.board.flat());if(row.some(i=>old.has(i)))return false}
+  return true;
+}
 function changed(){return W&&(W.rack.length!==G.s.racks[me()].length||JSON.stringify(W.board)!==JSON.stringify(G.s.board))}
 function firstPoints(){
   const key=st=>[...st].sort((a,b)=>a-b).join(',');const old=new Set(G.s.board.map(key));
@@ -229,7 +253,11 @@ function firstPoints(){
 function endTurn(){
   const s=G.s,m=me(),start=s.racks[m];
   const played=start.filter(i=>!W.rack.includes(i));
-  if(!played.length)return flash('Lege mindestens einen Stein – oder ziehe einen.');
+  if(!played.length){
+    if(!s.drawn)return flash('Lege mindestens einen Stein – oder ziehe einen.');
+    if(changed())return flash('Steine nur umgelegt, aber keinen neuen gelegt – mach es rückgängig oder lege einen Stein dazu.');
+    s.log.unshift(`${s.names[m]} beendet den Zug`);s.last=[];return nextTurn();
+  }
   if(W.board.some(st=>!analyze(st).ok))return flash('Es gibt noch ungültige Reihen (rot markiert).');
   if(!s.first[m]){
     const key=st=>[...st].sort((a,b)=>a-b).join(',');const now=new Set(W.board.map(key));
@@ -242,30 +270,34 @@ function endTurn(){
   if(!W.rack.length)return finish(m);
   nextTurn();
 }
+const firstMove=m=>((G.s.moves||[0,0])[m]||0)===0;
 function drawTile(){
-  if(changed()&&!confirm('Deine Änderungen werden zurückgenommen. Trotzdem ziehen?'))return;
   const s=G.s,m=me();
-  if(s.pool.length){const t=s.pool.pop();s.racks[m].push(t);s.passes=0;s.log.unshift(`${s.names[m]} zieht einen Stein`)}
-  else{s.passes++;s.log.unshift(`${s.names[m]} passt`);if(s.passes>=2)return finish(null)}
+  if(s.drawn)return;
+  if(changed()&&!confirm('Deine Änderungen werden zurückgenommen. Trotzdem ziehen?'))return;
+  if(s.pool.length){
+    const t=s.pool.pop();s.racks[m].push(t);s.passes=0;s.log.unshift(`${s.names[m]} zieht einen Stein`);
+    if(!firstMove(m)){s.drawn=t;s.seq++;W=null;sel.clear();push();flash('Stein gezogen – du darfst jetzt noch auslegen oder den Zug beenden.',true);return}
+  }else{s.passes++;s.log.unshift(`${s.names[m]} passt`);if(s.passes>=2)return finish(null)}
   s.last=[];nextTurn();
 }
-function nextTurn(){const s=G.s;s.turn=1-s.turn;s.seq++;s.log=s.log.slice(0,30);W=null;sel.clear();push()}
+function nextTurn(){const s=G.s;if(isLocal())cover=true;s.moves=s.moves||[0,0];s.moves[s.turn]++;s.drawn=false;s.turn=1-s.turn;s.seq++;s.log=s.log.slice(0,30);W=null;sel.clear();push()}
 function finish(w){
   const s=G.s,v=s.racks.map(r=>r.reduce((a,i)=>a+tileVal(i),0));
   if(w===null)w=v[0]===v[1]?-1:(v[0]<v[1]?0:1);
   const pts=[0,0];
-  if(w>=0){const d=v[1-w]-v[w];pts[w]=d;pts[1-w]=-d;s.wins[w]++}
+  if(w>=0){pts[1-w]=-v[1-w];s.wins[w]++}else{pts[0]=-v[0];pts[1]=-v[1]}
   s.tally=[s.tally[0]+pts[0],s.tally[1]+pts[1]];
   s.over={w,pts,v,at:Date.now()};s.seq++;W=null;sel.clear();
   record();push();
 }
 function rematch(){
-  if(G.role==='host'){G.s=deal(G.s.names,G.s);W=null;sel.clear();push()}
+  if(G.role!=='guest'){G.s=deal(G.s.names,G.s);W=null;sel.clear();cover=isLocal();push()}
   else{send({t:'rematch'});flash(connected?'Anfrage gesendet – dein Mitspieler startet die neue Runde.':'Nicht verbunden.')}
 }
 /* Ergebnis ins Spielebuch (gleiche Website) eintragen */
 function record(){
-  const s=G.s;if(!s.over||G.recorded===s.gid)return;
+  const s=G.s;if(!s.over||G.recorded===s.gid||isLocal())return;
   try{
     const K='spielebuch_v1';const S=Object.assign({players:[],history:[],current:null},JSON.parse(localStorage.getItem(K)||'null')||{});
     const winners=s.over.w>=0?[s.names[s.over.w]]:[...s.names];
@@ -284,15 +316,15 @@ function sortRack(mode){
   G.order=[...r].sort((a,b)=>key(a)-key(b)||a-b);save();render();
 }
 
-function setN(v){G.n=Math.max(N_MIN,Math.min(N_MAX,v));save();render()}
+function setN(v){if(!G)G={n:14};G.n=Math.max(N_MIN,Math.min(N_MAX,v));save();render()}
 function stepperHTML(){
   const n=curN();
   return `<div class="stepper"><button data-act="nminus"${n<=N_MIN?' disabled':''}>−</button><b>${n}</b><button data-act="nplus"${n>=N_MAX?' disabled':''}>+</button></div>
   <div class="presets">${[10,14,20].map(v=>`<button class="${n===v?'on':''}" data-act="nset" data-arg="${v}">${v}${v===14?' (Standard)':''}</button>`).join('')}</div>`;
 }
 /* ===== Lobby-Aktionen ===== */
-function readName(){const e=document.getElementById('nm');const n=(e?e.value:myName).trim();if(!n){lobbyErr='Bitte gib deinen Namen ein.';render();return null}myName=n.slice(0,20);localStorage.setItem('rummi_name',myName);return myName}
-function createGame(){if(!readName())return;G={code:rnd(4),role:'host',s:null};save();location.hash=G.code;startNet();render()}
+function readName(){const e=document.getElementById('nm');const n=(e?e.value:myName).trim();if(!n){lobbyErr='Bitte gib deinen Namen ein.';render();return null}myName=n.slice(0,20);try{localStorage.setItem('rummi_name',myName)}catch(e){}return myName}
+function createGame(){if(!readName())return;G={code:rnd(4),role:'host',s:null,n:G&&G.n};save();location.hash=G.code;startNet();render()}
 function joinGame(code){
   if(!readName())return;
   code=(code||document.getElementById('cd').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -300,7 +332,12 @@ function joinGame(code){
   if(!G||G.code!==code)G={code,role:'guest',s:null};
   save();location.hash=code;startNet();render();
 }
-function resume(){startNet();render()}
+function resume(){if(isLocal()){connected=true;render();return}startNet();render()}
+function startLocal(){
+  if(!readName())return;
+  const n=(G&&G.n)||14;G={code:'TEST',role:'local',n,s:null};
+  G.s=deal([myName,'Spieler 2']);connected=true;cover=true;W=null;sel.clear();save();render();
+}
 function leave(){
   if(!confirm('Spiel verlassen? Du kannst später mit dem gleichen Code nicht mehr weitermachen.'))return;
   try{peer&&peer.destroy()}catch(e){}peer=null;conn=null;G=null;save();W=null;sel.clear();showMenu=false;
@@ -327,10 +364,11 @@ function lobbyV(){
     h+=`<div class="card"><h2>Einladung</h2><p class="muted">Du wurdest zum Spiel <b>${esc(hashCode)}</b> eingeladen.</p><button class="primary" style="width:100%;margin-top:6px" data-act="joinHash">Mitspielen</button></div>`;
   }else{
     h+=`<div class="card"><h2>Neues Spiel</h2><p class="muted">Du bekommst einen Code oder Link, den du deinem Mitspieler schickst.</p><button class="primary" style="width:100%;margin-top:6px" data-act="create">Spiel erstellen</button></div>`;
+    h+=`<div class="card"><h2>Allein ausprobieren</h2><p class="muted">Testmodus: Du spielst beide Seiten abwechselnd auf diesem Gerät – ohne Verbindung.</p>${stepperHTML()}<button style="width:100%;margin-top:10px" data-act="local">Testspiel starten</button></div>`;
     h+=`<div class="card"><h2>Beitreten</h2><div class="row"><input id="cd" maxlength="4" placeholder="Code" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:4px"><button data-act="join">Beitreten</button></div></div>`;
   }
   if(lobbyErr)h+=`<div class="err">${esc(lobbyErr)}</div>`;
-  h+=`<div class="card"><h2>Kurzregeln</h2><p class="muted">Jeder startet normalerweise mit 14 Steinen – wer das Spiel erstellt, kann die Anzahl ändern. Reihen: mindestens 3 Steine – gleiche Zahl in verschiedenen Farben oder aufsteigende Zahlen in einer Farbe. Das erste Auslegen muss mindestens 30 Punkte ergeben. Danach darfst du die Reihen auf dem Tisch beliebig umbauen, solange am Ende alles gültig ist. Kannst oder willst du nicht legen, ziehst du einen Stein. Wer zuerst alle Steine los ist, gewinnt.</p></div>`;
+  h+=`<div class="card"><h2>Bedienung</h2><p class="muted">Stein antippen: Reihen, an die er passt, leuchten gelb – Reihe antippen und er liegt dort. Oder Steine einfach mit dem Finger auf eine Reihe, auf „neue Reihe“ oder zurück auf die Bank ziehen. Auf der Bank kannst du Steine durch Ziehen frei sortieren. Der Pfeil macht den letzten Schritt rückgängig.</p></div><div class="card"><h2>Kurzregeln</h2><p class="muted">Jeder startet normalerweise mit 14 Steinen – wer das Spiel erstellt, kann die Anzahl ändern. Reihen: mindestens 3 Steine – gleiche Zahl in verschiedenen Farben oder aufsteigende Zahlen in einer Farbe. Nach der 13 darf wieder die 1 folgen (z. B. 12-13-1). Das erste Auslegen muss mindestens 30 Punkte ergeben. Danach darfst du die Reihen auf dem Tisch beliebig umbauen, solange am Ende alles gültig ist. Kannst oder willst du nicht legen, ziehst du einen Stein – danach darfst du im selben Zug noch auslegen (nur nicht in deinem allerersten Zug). Wer zuerst alle Steine los ist, gewinnt: Der Verlierer bekommt den Wert seiner restlichen Steine als Minuspunkte (Joker = 25), der Gewinner 0 Punkte.</p></div>`;
   return h+'</div></div>';
 }
 function waitV(){
@@ -349,46 +387,57 @@ function gameV(){
   const rack=rackView(mine?W.rack:s.racks[m]);
   const startRack=new Set(s.racks[m]);
   const lastSet=new Set(s.last||[]);
-  let h=`<div class="game"><div class="top"><div class="opp"><span class="dot${connected?' on':''}"></span><b>${esc(s.names[o]||'…')}</b><span class="pill">${s.racks[o].length} Steine</span></div><span class="pill">Stapel ${s.pool.length}</span><button class="menu" data-act="menu">☰</button></div>`;
+  let h=`<div class="game"><div class="top"><div class="opp"><span class="dot${connected?' on':''}"></span><b>${esc(s.names[o]||'…')}</b></div><span class="pill">Stapel ${s.pool.length}</span><button class="menu" data-act="menu">☰</button></div>`;
   if(showMenu){
     h+=`<div class="bar" style="flex-wrap:wrap"><span class="grow">Stand: ${esc(s.names[0])} ${s.tally[0]} · ${esc(s.names[1])} ${s.tally[1]} <span style="opacity:.7">(Siege ${s.wins[0]}:${s.wins[1]} · Start mit ${s.n||14} Steinen)</span></span><button class="small" data-act="share">Link</button><button class="small" data-act="leave">Verlassen</button></div>`;
     if(s.log.length)h+=`<div class="bar" style="display:block;font-size:13px;opacity:.85">${s.log.slice(0,4).map(esc).join(' · ')}</div>`;
   }
+  const ids=[...sel];let nFit=0;
   h+=`<div class="board${mine?'':' watch'}" id="board">`;
-  if(!board.length)h+=`<div class="empty-board">${mine?'Wähle Steine auf deiner Bank aus und tippe „Neue Reihe“.':'Der Tisch ist noch leer.'}</div>`;
+  if(!board.length&&!mine)h+=`<div class="empty-board">Der Tisch ist noch leer.</div>`;
   board.forEach((st,k)=>{
-    const ok=analyze(st).ok;
-    h+=`<div class="set${ok?'':' bad'}">${st.map(id=>tileHTML(id,(mine&&startRack.has(id)?' mine':'')+(!mine||!startRack.has(id)?(lastSet.has(id)?' new':''):''))).join('')}${mine&&sel.size?`<button class="plus" data-act="toset" data-arg="${k}">+</button>`:''}</div>`;
+    const ok=analyze(st).ok,f=mine?rowFits(k,ids):null;if(f)nFit++;
+    h+=`<div class="set${ok?'':' bad'}${f?' fit':f===false?' dim':''}" data-drop="set" data-k="${k}">${st.map(id=>tileHTML(id,(mine&&startRack.has(id)?' mine':'')+(!mine||!startRack.has(id)?(lastSet.has(id)?' new':''):''))).join('')}${f?`<button class="fitbtn" data-act="toset" data-arg="${k}">+ hier anlegen</button>`:f===false?`<button class="plus" data-act="toset" data-arg="${k}" aria-label="Trotzdem anlegen">+</button>`:''}</div>`;
   });
+  if(mine){
+    const sv=ids.length&&analyze(ids).ok,need=3-ids.length;
+    h+=`<button class="newzone${sv?' ok':''}" data-act="newset" data-drop="new">${!ids.length?'Hierher ziehen = neue Reihe':sv?`+ Neue Reihe aus ${ids.length} Steinen`:need>0?`Neue Reihe: noch ${need} passende${need===1?'n Stein':' Steine'} wählen`:'+ Neue Reihe (noch ungültig)'}</button>`;
+  }
   h+='</div>';
-  if(flashMsg)h+=`<div class="flash">${esc(flashMsg)}</div>`;
+  if(flashMsg)h+=`<div class="flash${flashOk?' ok':''}">${esc(flashMsg)}</div>`;
   else if(!connected)h+=`<div class="bar"><span class="grow">⚠︎ ${esc(status||'Nicht verbunden')}</span></div>`;
   if(mine){
+    const ch=changed();
+    const txt=ids.length?(nFit?'Leuchtende Reihen passen – antippen oder hinziehen':analyze(ids).ok?'Daraus wird eine neue Reihe':'Passt nirgends dran – weitere Steine wählen')
+      :ch?'Weiter legen oder Zug beenden':s.drawn?'Gezogen – jetzt noch auslegen?':'Du bist dran – Stein antippen oder ziehen';
     const hint=!s.first[m]?`<span class="hint">Erstes Auslegen: ${firstPoints()}/30</span>`:'';
-    h+=`<div class="bar turn"><b class="grow">Du bist dran</b>${hint}</div>`;
+    h+=`<div class="bar turn"><b class="grow">${txt}</b>${hint}</div>`;
+    if(!ids.length&&!ch&&!s.drawn&&firstMove(m)&&s.pool.length)h+=`<div class="bar turn" style="padding-top:0;min-height:0;opacity:.8;font-size:13px">1. Zug: Ziehen beendet den Zug</div>`;
   }else h+=`<div class="bar"><span class="grow">${esc(s.names[o])} ist dran…</span>${!s.first[m]?'<span class="hint">Du musst noch 30 Punkte auslegen</span>':''}</div>`;
   h+=`<div class="dock">`;
   if(mine){
-    const hasSel=sel.size>0,ch=changed();
-    h+=`<div class="actions">${hasSel?`<button class="gold" data-act="newset">Neue Reihe</button><button data-act="torack">Auf Bank</button><button data-act="clearsel">✕</button>`:`<button data-act="reset"${ch?'':' disabled'}>↺ Zurück</button>${ch?`<button class="primary" data-act="end">Zug beenden ✓</button>`:`<button class="primary" data-act="draw">${s.pool.length?'Stein ziehen':'Passen'}</button>`}`}</div>`;
+    const ch=changed(),canUndo=W.hist&&W.hist.length;
+    if(ids.length)h+=`<div class="actions"><button data-act="torack">Zurück auf die Bank</button><button data-act="clearsel">Auswahl aufheben</button></div>`;
+    else h+=`<div class="actions"><button class="undo" data-act="undo"${canUndo?'':' disabled'} aria-label="Rückgängig"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>${ch||s.drawn?`<button class="primary main" data-act="end">Zug beenden ✓</button>`:`<button class="primary main" data-act="draw">${s.pool.length?'Stein ziehen':'Passen'}</button>`}</div>`;
   }
-  h+=`<div class="rack">${rack.map(id=>tileHTML(id)).join('')}</div><div class="sortrow"><button data-act="sortc">Nach Farbe</button><button data-act="sortn">Nach Zahl</button></div></div>`;
+  h+=`<div class="rack" data-drop="rack">${rack.map(id=>tileHTML(id,mine&&s.drawn===id?' new':'')).join('')}</div><div class="sortrow"><button data-act="sortc">Nach Farbe</button><button data-act="sortn">Nach Zahl</button></div></div>`;
+  if(isLocal()&&cover&&!s.over)h+=`<div class="overlay" data-act="reveal" style="background:var(--felt2)"><div class="card"><h2>${esc(s.names[s.turn])} ist dran</h2><p class="muted" style="color:var(--muted)">Testmodus · Handy weitergeben und antippen, um die Bank aufzudecken.</p><button class="primary" style="width:100%;margin-top:10px">Aufdecken</button></div></div>`;
   if(s.over){
     const w=s.over.w;
-    h+=`<div class="overlay"><div class="card"><h2>${w<0?'Unentschieden':w===m?'🏆 Gewonnen!':`${esc(s.names[w])} gewinnt`}</h2><p class="muted" style="color:var(--muted)">${s.racks[w<0?0:w].length?'Der Stapel ist leer – die wenigsten Punkte auf der Bank gewinnen.':'Alle Steine abgelegt.'}</p>
+    h+=`<div class="overlay"><div class="card"><h2>${w<0?'Unentschieden':w===m&&!isLocal()?'🏆 Gewonnen!':`${esc(s.names[w])} gewinnt`}</h2><p class="muted" style="color:var(--muted)">${s.racks[w<0?0:w].length?'Der Stapel ist leer – die wenigsten Punkte auf der Bank gewinnen.':'Alle Steine abgelegt.'}</p>
     <table>${[0,1].map(i=>`<tr><td>${esc(s.names[i])} <small style="color:var(--muted)">(Rest ${s.over.v[i]})</small></td><td>${s.over.pts[i]>0?'+':''}${s.over.pts[i]}</td></tr>`).join('')}<tr><td><b>Gesamtstand</b></td><td>${s.tally[0]} : ${s.tally[1]}</td></tr></table>
-    ${G.role==='host'?`<div class="nlabel">Steine für die nächste Runde</div>${stepperHTML()}`:''}
-    <div class="btns"><button class="primary" data-act="rematch">${G.role==='host'?'Neue Runde':'Neue Runde anfragen'}</button><a href="index.html"><button style="width:100%">Zum Spielebuch</button></a><button data-act="leave">Spiel verlassen</button></div></div></div>`;
+    ${G.role!=='guest'?`<div class="nlabel">Steine für die nächste Runde</div>${stepperHTML()}`:''}
+    <div class="btns"><button class="primary" data-act="rematch">${G.role!=='guest'?'Neue Runde':'Neue Runde anfragen'}</button><a href="index.html"><button style="width:100%">Zum Spielebuch</button></a><button data-act="leave">Spiel verlassen</button></div></div></div>`;
   }
   return h+'</div>';
 }
 function render(){
+  const nm=document.getElementById('nm');if(nm)myName=nm.value;
   const b=document.getElementById('board'),sc=b?b.scrollTop:0;
   let html;
-  if(!G||!G.code||!peer)html=lobbyV();
+  if(!G||!G.code||(!peer&&!isLocal()))html=lobbyV();
   else if(!G.s)html=waitV();
   else html=gameV();
-  const nm=document.getElementById('nm');if(nm)myName=nm.value;
   document.getElementById('app').innerHTML=html;
   const b2=document.getElementById('board');if(b2)b2.scrollTop=sc;
   document.title=G&&G.s&&myTurn()?'● Du bist dran – Rummi':'Rummi online';
@@ -404,18 +453,73 @@ document.addEventListener('click',e=>{
   }
   lobbyErr='';
   const a=el.dataset.act;
-  ({create:createGame,join:()=>joinGame(),joinHash:()=>joinGame(location.hash.slice(1)),resume,leave,share:shareLink,
+  ({create:createGame,local:startLocal,reveal:()=>{cover=false;render()},join:()=>joinGame(),joinHash:()=>joinGame(location.hash.slice(1)),resume,leave,share:shareLink,
     menu:()=>{showMenu=!showMenu;render()},
-    toset:()=>toSet(+el.dataset.arg),newset:newSet,torack:toRack,clearsel:()=>{sel.clear();render()},
+    toset:()=>toSet(+el.dataset.arg),undo,newset:newSet,torack:toRack,clearsel:()=>{sel.clear();render()},
     reset:resetTurn,end:endTurn,draw:drawTile,nminus:()=>setN(curN()-1),nplus:()=>setN(curN()+1),nset:()=>setN(+el.dataset.arg),sortc:()=>sortRack('c'),sortn:()=>sortRack('n'),rematch}[a]||(()=>{}))();
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='cd')joinGame()});
+
+/* ===== Ziehen & Ablegen ===== */
+let drag=null,noClick=false;
+const onBoard=id=>!!(W&&W.board.some(r=>r.includes(id)));
+document.addEventListener('pointerdown',e=>{
+  noClick=false;
+  const el=e.target.closest('.t[data-id]');
+  if(!el||!G||!G.s||G.s.over||el.closest('.ghost'))return;
+  drag={id:+el.dataset.id,x:e.clientX,y:e.clientY,el,on:false};
+});
+function dragStart(){
+  const d=drag,mine=myTurn();
+  if(onBoard(d.id)&&!mine){drag=null;return}
+  d.ids=mine&&sel.has(d.id)?[...sel]:[d.id];
+  d.ids.forEach(i=>{const t=document.querySelector(`#app .t[data-id="${i}"]`);if(t)t.classList.add('dragging')});
+  d.ghost=document.createElement('div');d.ghost.className='ghost';d.ghost.innerHTML=d.ids.map(i=>tileHTML(i)).join('');
+  document.body.appendChild(d.ghost);d.on=true;
+  if(mine)document.querySelectorAll('.set[data-k]').forEach(n=>{const f=rowFits(+n.dataset.k,d.ids);n.classList.toggle('fit',!!f);n.classList.toggle('dim',f===false)});
+}
+function dropTarget(x,y){
+  const el=document.elementFromPoint(x,y);if(!el)return null;
+  const z=el.closest('[data-drop]');if(!z)return null;
+  if(z.dataset.drop!=='rack'&&!myTurn())return null;
+  return {z,tile:el.closest('.rack .t[data-id]')};
+}
+let lastOver=null;
+document.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  if(!drag.on){if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<8)return;dragStart();if(!drag)return}
+  e.preventDefault();
+  drag.ghost.style.left=e.clientX+'px';drag.ghost.style.top=e.clientY+'px';
+  const t=dropTarget(e.clientX,e.clientY),z=t&&t.z;
+  if(lastOver!==z){lastOver&&lastOver.classList.remove('over');z&&z.classList.add('over');lastOver=z}
+},{passive:false});
+function dragEnd(e,cancel){
+  const d=drag;drag=null;if(!d||!d.on)return;
+  noClick=true;setTimeout(()=>noClick=false,400);
+  d.ghost.remove();lastOver&&lastOver.classList.remove('over');lastOver=null;
+  const t=cancel?null:dropTarget(e.clientX,e.clientY);
+  if(!t){render();return}
+  const kind=t.z.dataset.drop;
+  if(kind==='set'){sel=new Set(d.ids);toSet(+t.z.dataset.k);return}
+  if(kind==='new'){sel=new Set(d.ids);newSet();return}
+  if(kind==='rack'){
+    if(d.ids.some(onBoard)){sel=new Set(d.ids);if(!toRack()){sel.clear();render();return}}
+    const r=W?W.rack:G.s.racks[me()];const list=rackView(r).filter(i=>!d.ids.includes(i));
+    let at=list.length;
+    if(t.tile&&!d.ids.includes(+t.tile.dataset.id)){const b=t.tile.getBoundingClientRect();at=list.indexOf(+t.tile.dataset.id)+(e.clientX>b.left+b.width/2?1:0)}
+    list.splice(at,0,...d.ids);G.order=list;save();sel.clear();render();
+  }
+}
+document.addEventListener('pointerup',e=>dragEnd(e,false));
+document.addEventListener('pointercancel',e=>dragEnd(e,true));
+document.addEventListener('click',e=>{if(noClick){e.stopPropagation();e.preventDefault()}},true);
 window.addEventListener('hashchange',()=>{if(!peer)render()});
 
 /* Start: Einladungslink eines bekannten Spiels direkt fortsetzen */
 (function(){
   const hc=(location.hash||'').slice(1).toUpperCase();
-  if(G&&G.code&&hc===G.code&&myName)startNet();
+  if(isLocal())connected=true;
+  else if(G&&G.code&&hc===G.code&&myName)startNet();
   render();
 })();
 </script>
