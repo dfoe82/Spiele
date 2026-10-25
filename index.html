@@ -128,6 +128,54 @@ table{border-collapse:collapse;width:100%}
 .stats th,.stats td{padding:6px 4px;text-align:right;border-bottom:1px solid var(--line)}
 .stats th:first-child,.stats td:first-child{text-align:left}
 .empty{text-align:center;color:var(--muted);padding:30px 14px}
+/* Dart */
+.dt-head{text-align:center;color:var(--muted);font-size:14px;margin-bottom:10px}
+.dt-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.dt-cards.many{grid-template-columns:repeat(2,minmax(0,1fr))}
+.dt-cards>:only-child{grid-column:1/-1}
+.dt-card{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.dt-card.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent2)}
+.dt-card.win{border-color:var(--gold)}
+.dt-top{display:flex;justify-content:space-between;gap:6px;align-items:center}
+.dt-top b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dt-in{font-size:12px;font-weight:700;color:var(--gold)}
+.dt-legs{color:var(--gold);letter-spacing:2px;font-size:13px}
+.dt-big{font-size:44px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums}
+.dt-big small{font-size:14px;font-weight:600;color:var(--muted)}
+.dt-sub{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dt-sub b{color:var(--ink)}
+.dt-last{font-size:12px;color:var(--muted)}
+.dt-msg{background:var(--accent2);border-radius:12px;padding:8px 12px;text-align:center;font-weight:600;margin-bottom:8px}
+.dt-msg.bad{color:var(--red)}
+.dt-co{text-align:center;margin-bottom:8px;color:var(--gold);font-size:15px}
+.dt-co b{color:var(--ink)}
+.dt-turn{text-align:center;font-weight:700;font-size:17px;margin:4px 0 10px}
+.dt-mode{margin-bottom:10px}
+.dt-entry{font-size:40px;font-weight:800;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;margin-bottom:8px;min-height:62px;font-variant-numeric:tabular-nums}
+.dt-entry .muted{font-size:20px;font-weight:500}
+.dt-quick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.dt-quick button{padding:9px 2px;font-size:15px;font-weight:600}
+.dt-quick button.co{background:var(--gold);color:#1d1d1d}
+.dt-pad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.dt-pad button{font-size:24px;font-weight:700;padding:13px 0}
+.dt-slots{display:flex;gap:6px;margin-bottom:8px}
+.dt-slots span{flex:1;text-align:center;border:1px dashed var(--line);border-radius:10px;padding:8px 2px;color:var(--muted);font-size:14px}
+.dt-slots span.f{border-style:solid;border-color:var(--accent);color:var(--ink);font-weight:700;font-size:17px}
+.dt-slots span.sum{flex:0 0 56px;border:0;font-weight:800;color:var(--ink);font-size:18px}
+.dt-mult{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.dt-mult button{font-weight:700}
+.dt-mult button.on{background:var(--accent);color:var(--on)}
+.dt-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:10px}
+.dt-grid button{padding:13px 0;font-size:19px;font-weight:700}
+.dt-grid button.hl{box-shadow:inset 0 0 0 2px var(--accent)}
+.dt-grid button.miss{grid-column:span 4;font-size:16px;color:var(--red)}
+.dt-ask{text-align:center;display:flex;flex-direction:column;gap:10px}
+.dt-ask .seg button{font-size:22px;font-weight:800}
+.dt-cr td,.dt-cr th{text-align:center}
+.dt-cr .mk{font-size:20px;font-weight:800;color:var(--accent)}
+.dt-cr .mk.full{color:var(--ink)}
+.dt-cr tr.closed th,.dt-cr tr.closed td{opacity:.4}
+.dt-cr th.nx{color:var(--accent)}
 /* Mühle */
 .mh-board{border-radius:20px;filter:drop-shadow(0 6px 14px rgba(40,20,5,.28));margin-bottom:12px;touch-action:manipulation}
 .mh-board svg{display:block;width:100%;height:auto;max-width:520px;margin:0 auto}
@@ -178,7 +226,8 @@ const GAMES={
   rummikub:{name:'Rummikub',ico:'🔢',desc:'Punkte pro Runde',best:'high',min:2},
   minigolf:{name:'Minigolf',ico:'⛳',desc:'Schläge pro Bahn',best:'low',min:1},
   kubb:{name:'Wikingerschach',ico:'🪵',desc:'Gewonnene Runden',best:'high',min:2},
-  muehle:{name:'Mühle',ico:'⚪',desc:'2 Spieler, ein Bildschirm',best:'high',min:2,max:2}
+  muehle:{name:'Mühle',ico:'⚪',desc:'2 Spieler, ein Bildschirm',best:'high',min:2,max:2},
+  dart:{name:'Dart',ico:'🎯',desc:'301, 501, Cricket, Rund um die Uhr',best:'high',min:1,max:8}
 };
 const KEY='spielebuch_v1';
 let S=load();
@@ -432,6 +481,196 @@ function mhV(c){
   <p class="mh-rulenote">Regeln: ${d.fly?'Springen erlaubt':'kein Springen'} · Mühle: ${MH_RULES[d.millRule||'frei'][0]}${d.draw10?` · Remis nach ${MH_DRAW} Zügen bei 3 gegen 3`:''}</p>`;
 }
 
+/* ---------- Dart ---------- */
+const DT_INVALID=new Set([179,178,176,175,173,172,169,166,163]);
+const DT_CR=[20,19,18,17,16,15,25];
+const DT_MODES={'301':'301','501':'501',cricket:'Cricket',atc:'Rund um die Uhr'};
+const DT_OUT={double:'Double Out',single:'Single Out',master:'Master Out'};
+const dtNum=(x,k=1)=>Number(x).toLocaleString('de-DE',{minimumFractionDigits:k,maximumFractionDigits:k});
+const dtAvg=(p,d)=>d?p/d*3:0;
+function dtNew(v,pl){
+  const mode=v.dmode||'501';
+  const st=()=>({pts:0,darts:0,f9p:0,f9d:0,hi:0,n100:0,n140:0,n180:0,hco:0,best:0,legs:0,marks:0,hits:0});
+  const d={mode,x01:mode==='301'||mode==='501',start:mode==='301'?301:501,out:v.dout||'double',din:(mode==='301'||mode==='501')&&v.din==='double',legsTo:(mode==='301'||mode==='501')?(v.dlegs||1):1,
+    input:v.dinput||'total',names:[...pl],n:pl.length,starter:0,legNo:1,st:pl.map(st),hist:[],mult:1,entry:'',ask:null,over:null};
+  dtLeg(d);return d;
+}
+function dtLeg(d){
+  d.rem=Array(d.n).fill(d.start);d.vis=Array(d.n).fill(0);d.legDarts=Array(d.n).fill(0);d.legPts=Array(d.n).fill(0);
+  d.marks=Array.from({length:d.n},()=>DT_CR.map(()=>0));d.cpts=Array(d.n).fill(0);d.tgt=Array(d.n).fill(1);
+  d.isIn=Array(d.n).fill(!d.din);
+  d.last=Array(d.n).fill('');d.turn=d.starter;d.cur=[];d.mult=1;d.entry='';
+}
+function dtSnap(d){const {hist,...r}=d;d.hist.push(JSON.stringify(r));if(d.hist.length>80)d.hist.shift()}
+function dtUndo(){const d=S.current.data;if(!d.hist.length)return;Object.assign(d,JSON.parse(d.hist.pop()));d.entry='';dtMsg='';save();render()}
+let dtMsg='',dtMsgT=null,dtMsgBad=false;
+function dtFlash(m,bad){dtMsg=m;dtMsgBad=!!bad;clearTimeout(dtMsgT);dtMsgT=setTimeout(()=>{dtMsg='';render()},2800)}
+function dtNextP(d){d.turn=(d.turn+1)%d.n;d.cur=[];d.mult=1;d.entry=''}
+function dtWinLeg(d,p){
+  const s=d.st[p];s.legs++;
+  if(s.legs>=d.legsTo){d.over={w:p};d.cur=[];return}
+  dtFlash(`Leg ${d.legNo} an ${d.names[p]}!`);d.legNo++;d.starter=(d.starter+1)%d.n;dtLeg(d);
+}
+function dtCommit(d,score,darts,bust,fin){
+  const p=d.turn,s=d.st[p],R=d.rem[p],pts=bust?0:score;
+  s.pts+=pts;s.darts+=darts;d.legDarts[p]+=darts;d.legPts[p]+=pts;
+  if(d.vis[p]<3){s.f9p+=pts;s.f9d+=darts}
+  d.vis[p]++;
+  if(!bust){s.hi=Math.max(s.hi,score);if(score>=180)s.n180++;else if(score>=140)s.n140++;else if(score>=100)s.n100++;d.rem[p]=R-score}
+  d.last[p]=bust?'Bust':String(score);
+  if(fin){s.hco=Math.max(s.hco,R);const ld=d.legDarts[p];s.best=s.best?Math.min(s.best,ld):ld;return dtWinLeg(d,p)}
+  if(bust)dtFlash(`${d.names[p]}: überworfen – Bust!`,true);
+  dtNextP(d);
+}
+/* Checkout-Vorschlag */
+const DT_FIN=[40,32,36,24,20,16,28,12,8,4,50,38,34,30,26,22,18,14,10,6,2];
+const DT_SET=[];for(let n=20;n>=1;n--){DT_SET.push({v:n*3,l:'T'+n,c:2+(20-n)*.001});DT_SET.push({v:n,l:String(n),c:1+(20-n)*.001})}DT_SET.push({v:25,l:'25',c:1.5});
+for(let n=20;n>=1;n--)DT_SET.push({v:n*2,l:'D'+n,c:2.5+(20-n)*.001});DT_SET.push({v:50,l:'Bull',c:3});
+const dtFinL=v=>v===50?'Bull':'D'+v/2;
+const DT_CO={};
+function dtCheckout(rem,left){
+  const key=rem+'|'+left;if(key in DT_CO)return DT_CO[key];
+  let best=null;const fin=DT_FIN.map((v,i)=>({v,l:dtFinL(v),c:i*.05}));
+  const tryC=(arr,c)=>{if(!best||arr.length<best.a.length||(arr.length===best.a.length&&c<best.c))best={a:arr,c}};
+  if(rem<=170&&rem>1){
+    fin.forEach(f=>{if(f.v===rem)tryC([f.l],f.c)});
+    if(!best&&left>=2)DT_SET.forEach(a=>fin.forEach(f=>{if(a.v+f.v===rem)tryC([a.l,f.l],a.c+f.c)}));
+    if(!best&&left>=3)DT_SET.forEach(a=>DT_SET.forEach(b=>{const r=rem-a.v-b.v;if(r<2)return;const f=fin.find(x=>x.v===r);if(f)tryC([a.l,b.l,f.l],a.c+b.c+f.c)}));
+  }
+  return DT_CO[key]=best?best.a:null;
+}
+function dtSubmitTotal(){
+  const d=S.current.data;if(d.over||d.ask)return;
+  if(d.entry===''){dtFlash('Bitte zuerst die Punkte der Aufnahme eingeben.',true);return render()}
+  const v=parseInt(d.entry,10),p=d.turn,R=d.rem[p];
+  if(v>180||DT_INVALID.has(v)){dtFlash(`${v} Punkte sind mit 3 Darts nicht möglich.`,true);d.entry='';return render()}
+  const nw=R-v;d.entry='';dtSnap(d);
+  if(nw<0||(nw===1&&d.out!=='single'))dtCommit(d,v,3,true,false);
+  else if(nw===0)d.ask={score:v};
+  else{if(d.din&&!d.isIn[p]&&v>0)d.isIn[p]=true;dtCommit(d,v,3,false,false)}
+  save();render();
+}
+function dtAsk(k){const d=S.current.data;if(!d.ask)return;const v=d.ask.score;d.ask=null;dtCommit(d,v,k,false,true);save();render()}
+function dtAskCancel(){dtUndo()}
+function dtKey(k){
+  const d=S.current.data;if(d.over||d.ask)return;
+  if(k==='del')d.entry=d.entry.slice(0,-1);
+  else if(d.entry.length<3)d.entry=(d.entry+k).replace(/^0+(?=\d)/,'');
+  render();
+}
+function dtQuick(v){const d=S.current.data;d.entry=String(v);dtSubmitTotal()}
+function dtSetMult(m){const d=S.current.data;d.mult=d.mult===m?1:m;render()}
+function dtInput(m){const d=S.current.data;if(d.cur.length)return dtFlash('Erst die angefangene Aufnahme beenden.',true),render();d.input=m;save();render()}
+function dtDart(n){
+  const d=S.current.data,p=d.turn,s=d.st[p];if(d.over||d.ask)return;
+  let m=n===0?0:d.mult;if(n===25&&m===3)m=1;
+  let val=n===25?(m===2?50:m?25:0):n*m,dead=false;
+  dtSnap(d);
+  if(d.x01&&d.isIn&&!d.isIn[p]){if(m===2)d.isIn[p]=true;else if(n>0){val=0;dead=true}}
+  d.cur.push({n,m,v:val,dead});d.mult=1;
+  if(d.x01){
+    const sum=d.cur.reduce((a,x)=>a+x.v,0),nw=d.rem[p]-sum;
+    const okFin=d.out==='single'||(d.out==='double'&&m===2)||(d.out==='master'&&m>=2);
+    if(nw<0||(nw===1&&d.out!=='single')||(nw===0&&!okFin))dtCommit(d,sum,d.cur.length,true,false);
+    else if(nw===0)dtCommit(d,sum,d.cur.length,false,true);
+    else if(d.cur.length===3)dtCommit(d,sum,3,false,false);
+  }else if(d.mode==='cricket'){
+    s.darts++;const ti=DT_CR.indexOf(n);
+    if(ti>=0&&m>0){s.marks+=m;for(let k=0;k<m;k++){if(d.marks[p][ti]<3)d.marks[p][ti]++;else if(d.marks.some((mk,q)=>q!==p&&mk[ti]<3))d.cpts[p]+=n}}
+    if(d.marks[p].every(x=>x>=3)&&d.cpts[p]>=Math.max(...d.cpts)){s.legs++;d.over={w:p};d.cur=[]}
+    else if(d.cur.length===3){d.last[p]=d.cur.map(dtLbl).join(' ');dtNextP(d)}
+  }else{
+    s.darts++;
+    if(m>0&&n===d.tgt[p]){s.hits++;d.tgt[p]=d.tgt[p]===20?25:d.tgt[p]===25?26:d.tgt[p]+1}
+    if(d.tgt[p]===26){s.legs++;d.over={w:p};d.cur=[]}
+    else if(d.cur.length===3){d.last[p]=d.cur.map(dtLbl).join(' ');dtNextP(d)}
+  }
+  save();render();
+}
+const dtLbl=x=>(x.n===0?'–':x.n===25?(x.m===2?'Bull':'25'):(x.m===3?'T':x.m===2?'D':'')+x.n)+(x.dead?' (0)':'');
+const dtTgtL=t=>t===25?'Bull':t>25?'✓':String(t);
+function dtPlayerStats(d,i){
+  const s=d.st[i];
+  return {avg:dtAvg(s.pts,s.darts),f9:dtAvg(s.f9p,s.f9d),hi:s.hi,n180:s.n180,n140:s.n140,n100:s.n100,hco:s.hco,best:s.best,legs:s.legs,
+    darts:s.darts,mpr:s.darts?s.marks/(s.darts/3):0,hits:s.hits};
+}
+function dtSummary(c){const d=c.data;return {mode:d.mode,out:d.out,din:!!d.din,legsTo:d.legsTo,st:c.players.map((_,i)=>dtPlayerStats(d,i))}}
+function dtV(c){
+  const d=c.data,p=d.turn;
+  const curSum=d.cur.reduce((a,x)=>a+x.v,0);
+  const card=i=>{
+    const s=d.st[i],on=!d.over&&i===p,ld=d.legDarts[i];
+    let big,sub;
+    if(d.x01){big=on&&d.cur.length?d.rem[i]-curSum:d.rem[i];
+      sub=`<span><b>Ø ${dtNum(dtAvg(s.pts,s.darts))}</b></span><span>Leg-Ø ${dtNum(dtAvg(d.legPts[i],ld))}</span><span>${ld} Darts</span>`}
+    else if(d.mode==='cricket'){big=d.cpts[i];sub=`<span><b>MPR ${dtNum(s.darts?s.marks/(s.darts/3):0,2)}</b></span><span>${s.darts} Darts</span>`}
+    else{big=dtTgtL(d.tgt[i]);sub=`<span><b>Treffer ${s.hits}/${s.darts}</b></span><span>${s.darts?Math.round(s.hits/s.darts*100):0} %</span>`}
+    const notIn=d.x01&&d.isIn&&!d.isIn[i]?`<span class="dt-in">Double In offen</span>`:'';
+    const legs=d.legsTo>1?`<span class="dt-legs">${'●'.repeat(s.legs)}${'○'.repeat(d.legsTo-s.legs)}</span>`:'';
+    return `<div class="dt-card${on?' on':''}${d.over&&d.over.w===i?' win':''}"><div class="dt-top"><b>${esc(c.players[i])}</b>${legs}</div>${notIn}<div class="dt-big">${d.mode==='atc'?'<small>Ziel</small> ':''}${big}</div><div class="dt-sub">${sub}</div>${d.last[i]?`<div class="dt-last">Zuletzt: ${esc(d.last[i])}</div>`:''}</div>`;
+  };
+  let h=`<div class="dt-head"><b>${DT_MODES[d.mode]}</b>${d.x01?`${d.din?' · Double In':''} · ${DT_OUT[d.out]}${d.legsTo>1?` · First to ${d.legsTo} Legs · Leg ${d.legNo}`:''}`:''}</div>`;
+  h+=`<div class="dt-cards${d.n>2?' many':''}">${c.players.map((_,i)=>card(i)).join('')}</div>`;
+  if(d.mode==='cricket'){
+    const mk=x=>x>=3?'<span class="mk full">⊗</span>':x===2?'<span class="mk">✕</span>':x===1?'<span class="mk">/</span>':'';
+    h+=`<div class="tbl"><table class="sheet dt-cr"><thead><tr><th></th>${c.players.map((n,i)=>`<th class="${i===p&&!d.over?'nx':''}">${esc(n)}</th>`).join('')}</tr></thead><tbody>${DT_CR.map((t,ti)=>`<tr class="${d.marks.every(m=>m[ti]>=3)?'closed':''}"><th>${t===25?'Bull':t}</th>${c.players.map((_,i)=>`<td>${mk(d.marks[i][ti])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+  if(d.over){
+    const w=d.over.w,rows=c.players.map((n,i)=>({n,s:dtPlayerStats(d,i)}));
+    h+=`<div class="card winner">🎯 <b>${esc(c.players[w])}</b> gewinnt${d.x01&&d.legsTo>1?` ${d.st[w].legs}:${Math.max(...d.st.filter((_,i)=>i!==w).map(s=>s.legs),0)}`:''}!</div>`;
+    if(d.x01)h+=`<div class="tbl"><table class="sheet"><thead><tr><th>Spieler</th><th>Ø</th><th>First 9</th><th>Höchste</th><th>180</th><th>Checkout</th><th>Bestes Leg</th></tr></thead><tbody>${rows.map(r=>`<tr><th>${esc(r.n)}</th><td>${dtNum(r.s.avg)}</td><td>${dtNum(r.s.f9)}</td><td>${r.s.hi}</td><td>${r.s.n180}</td><td>${r.s.hco||'–'}</td><td>${r.s.best?r.s.best+' Darts':'–'}</td></tr>`).join('')}</tbody></table></div>`;
+    else h+=`<div class="tbl"><table class="sheet"><thead><tr><th>Spieler</th><th>Darts</th><th>${d.mode==='cricket'?'MPR':'Trefferquote'}</th></tr></thead><tbody>${rows.map(r=>`<tr><th>${esc(r.n)}</th><td>${r.s.darts}</td><td>${d.mode==='cricket'?dtNum(r.s.mpr,2):(r.s.darts?Math.round(r.s.hits/r.s.darts*100):0)+' %'}</td></tr>`).join('')}</tbody></table></div>`;
+    h+=`<button class="wide" onclick="dtUndo()">↶ Letzten Wurf zurücknehmen</button>`;
+    return h;
+  }
+  const nm=esc(c.players[p]);
+  let status=dtMsg?`<div class="dt-msg${dtMsgBad?' bad':''}">${esc(dtMsg)}</div>`:'';
+  const pIn=!d.x01||!d.isIn||d.isIn[p];
+  if(!pIn)status+=`<div class="dt-co">${d.input==='darts'?'Noch nicht eröffnet – erst ein <b>Doppel</b> zählt':'Noch nicht eröffnet – Punkte ab dem ersten <b>Doppel</b> eintragen'}</div>`;
+  if(pIn&&d.x01&&d.out!=='single'){
+    const left=d.input==='darts'?3-d.cur.length:3,rem=d.rem[p]-curSum,co=dtCheckout(rem,left);
+    if(co)status+=`<div class="dt-co">Checkout ${rem}: <b>${co.join(' · ')}</b></div>`;
+  }
+  h+=status;
+  if(d.ask){
+    const v=d.ask.score;
+    h+=`<div class="card dt-ask"><b>Check-out ${v}! Mit wie vielen Darts?</b><div class="seg">${[1,2,3].filter(k=>k>1||v<=50).filter(k=>k>2||v<=110).map(k=>`<button onclick="dtAsk(${k})">${k}</button>`).join('')}</div><button class="ghost small" onclick="dtAskCancel()">Abbrechen</button></div>`;
+    return h;
+  }
+  h+=`<div class="dt-turn">${nm} wirft${d.x01?` · Rest ${d.rem[p]-curSum}`:d.mode==='atc'?` · Ziel ${dtTgtL(d.tgt[p])}`:''}</div>`;
+  if(d.x01)h+=`<div class="seg dt-mode"><button class="${d.input==='total'?'on':''}" onclick="dtInput('total')">Aufnahme eingeben</button><button class="${d.input==='darts'?'on':''}" onclick="dtInput('darts')">Einzelne Darts</button></div>`;
+  if(d.x01&&d.input==='total'){
+    const R=d.rem[p];
+    h+=`<div class="dt-entry">${d.entry||'<span class="muted">Punkte</span>'}</div>`;
+    h+=`<div class="dt-quick">${[26,41,45,60,81,85,100,140,180].map(v=>`<button onclick="dtQuick(${v})">${v}</button>`).join('')}${pIn&&R<=170&&dtCheckout(R,3)?`<button class="co" onclick="dtQuick(${R})">Check ${R}</button>`:''}</div>`;
+    h+=`<div class="dt-pad">${[1,2,3,4,5,6,7,8,9].map(k=>`<button onclick="dtKey('${k}')">${k}</button>`).join('')}<button onclick="dtKey('del')" aria-label="Löschen">⌫</button><button onclick="dtKey('0')">0</button><button class="primary" onclick="dtSubmitTotal()">OK</button></div>`;
+  }else{
+    const hl=n=>d.mode==='cricket'?DT_CR.includes(n):d.mode==='atc'?n===d.tgt[p]:false;
+    h+=`<div class="dt-slots">${[0,1,2].map(k=>`<span class="${d.cur[k]?'f':''}">${d.cur[k]?dtLbl(d.cur[k]):k+1+'. Dart'}</span>`).join('')}${d.x01?`<span class="sum">${curSum}</span>`:''}</div>`;
+    h+=`<div class="dt-mult"><button class="${d.mult===2?'on':''}" onclick="dtSetMult(2)">Double</button><button class="${d.mult===3?'on':''}" onclick="dtSetMult(3)">Triple</button></div>`;
+    h+=`<div class="dt-grid">${Array.from({length:20},(_,i)=>i+1).map(n=>`<button class="${hl(n)?'hl':''}" onclick="dtDart(${n})">${n}</button>`).join('')}<button class="${hl(25)?'hl':''}" onclick="dtDart(25)">${d.mult===2?'Bull':'25'}</button><button class="miss" onclick="dtDart(0)">Daneben</button></div>`;
+  }
+  h+=`<button class="wide" onclick="dtUndo()"${d.hist.length?'':' disabled'}>↶ Rückgängig</button>`;
+  return h;
+}
+function dtStatsV(list){
+  const ent=list.filter(e=>e.game==='dart'&&e.dart);if(!ent.length)return '';
+  const X={},C={},A={};
+  ent.forEach(e=>e.players.forEach((p,i)=>{const s=e.dart.st[i];if(!s)return;const win=e.winners.includes(p)&&e.players.length>1;
+    if(e.dart.mode==='301'||e.dart.mode==='501'){const r=X[p]=X[p]||{g:0,w:0,pts:0,darts:0,bavg:0,hi:0,n180:0,hco:0,best:0};
+      r.g++;if(win)r.w++;r.pts+=s.avg*s.darts/3;r.darts+=s.darts;r.bavg=Math.max(r.bavg,s.avg);r.hi=Math.max(r.hi,s.hi);r.n180+=s.n180;r.hco=Math.max(r.hco,s.hco);if(s.best)r.best=r.best?Math.min(r.best,s.best):s.best}
+    else if(e.dart.mode==='cricket'){const r=C[p]=C[p]||{g:0,w:0,marks:0,darts:0};r.g++;if(win)r.w++;r.marks+=s.mpr*s.darts/3;r.darts+=s.darts}
+    else{const r=A[p]=A[p]||{g:0,w:0,best:0};r.g++;if(win)r.w++;if(s.darts&&e.winners.includes(p))r.best=r.best?Math.min(r.best,s.darts):s.darts}}));
+  let h='';
+  const xr=Object.entries(X).sort((a,b)=>dtAvg(b[1].pts,b[1].darts)-dtAvg(a[1].pts,a[1].darts));
+  if(xr.length)h+=`<div class="card"><h2>Dart · 301/501</h2><div class="tbl" style="margin:0;border:0"><table class="stats"><tr><th>Spieler</th><th>Spiele</th><th>Siege</th><th>Ø</th><th>Bester Ø</th><th>Höchste</th><th>180</th><th>Checkout</th><th>Bestes Leg</th></tr>${xr.map(([p,r])=>`<tr><td>${esc(p)}</td><td>${r.g}</td><td>${r.w}</td><td><b>${dtNum(dtAvg(r.pts,r.darts))}</b></td><td>${dtNum(r.bavg)}</td><td>${r.hi}</td><td>${r.n180}</td><td>${r.hco||'–'}</td><td>${r.best||'–'}</td></tr>`).join('')}</table></div></div>`;
+  const cr=Object.entries(C);
+  if(cr.length)h+=`<div class="card"><h2>Dart · Cricket</h2><table class="stats"><tr><th>Spieler</th><th>Spiele</th><th>Siege</th><th>MPR</th></tr>${cr.map(([p,r])=>`<tr><td>${esc(p)}</td><td>${r.g}</td><td>${r.w}</td><td>${dtNum(r.darts?r.marks/(r.darts/3):0,2)}</td></tr>`).join('')}</table></div>`;
+  const ar=Object.entries(A);
+  if(ar.length)h+=`<div class="card"><h2>Dart · Rund um die Uhr</h2><table class="stats"><tr><th>Spieler</th><th>Spiele</th><th>Siege</th><th>Beste Runde</th></tr>${ar.map(([p,r])=>`<tr><td>${esc(p)}</td><td>${r.g}</td><td>${r.w}</td><td>${r.best?r.best+' Darts':'–'}</td></tr>`).join('')}</table></div>`;
+  return h;
+}
+
 /* ---------- Allgemein ---------- */
 function totals(c){
   const d=c.data;
@@ -441,6 +680,7 @@ function totals(c){
     case 'minigolf':return d.st.map(a=>a.reduce((x,y)=>x+(y||0),0));
     case 'kubb':return c.players.map((_,i)=>d.rounds.filter(r=>r===i).length);
     case 'muehle':return d.over?[0,1].map(i=>d.over.w===i?1:0):[0,1].map(i=>mhCount(d,i));
+    case 'dart':return d.x01?d.st.map(s=>s.legs):d.mode==='cricket'?(d.over?d.cpts.map((x,i)=>d.over.w===i?Math.max(...d.cpts):x):d.cpts):d.tgt.map(t=>Math.min(t,26)-1);
   }
 }
 function incomplete(c){
@@ -450,12 +690,13 @@ function incomplete(c){
     case 'rummikub':return d.rounds.length?'':'Es wurde noch keine Runde eingetragen.';
     case 'minigolf':return d.st.some(a=>a.some(v=>v==null))?'Es sind noch nicht alle Bahnen eingetragen.':'';
     case 'kubb':return Math.max(...totals(c))<d.target?'Noch hat niemand die nötigen Runden gewonnen.':'';
+    case 'dart':return d.over?'':'Das Spiel ist noch nicht beendet – gespeichert wird der aktuelle Stand.';
     case 'muehle':return d.over?'':'Die Partie ist noch nicht entschieden – gespeichert wird der aktuelle Stand (mehr Steine = vorn).';
   }
 }
 function info(c){
   const d=c.data;
-  return {kniffel:'',rummikub:`${d.rounds?.length} Runde${d.rounds?.length===1?'':'n'}`,minigolf:`${d.holes} Bahnen`,kubb:`auf ${d.target} Siege`,muehle:d.over?(d.over.w<0?'Remis':`${d.over.why}, ${d.moves} Züge`):`${d.moves} Züge`}[c.game];
+  return {kniffel:'',rummikub:`${d.rounds?.length} Runde${d.rounds?.length===1?'':'n'}`,minigolf:`${d.holes} Bahnen`,kubb:`auf ${d.target} Siege`,dart:`${DT_MODES[d.mode]}${d.x01?`${d.din?' · Double In':''} · ${DT_OUT[d.out]}${d.legsTo>1?` · First to ${d.legsTo}`:''}`:''}`,muehle:d.over?(d.over.w<0?'Remis':`${d.over.why}, ${d.moves} Züge`):`${d.moves} Züge`}[c.game];
 }
 
 function startSetup(k){
@@ -484,7 +725,8 @@ function startGame(){
     rummikub:()=>({rounds:[]}),
     minigolf:()=>({holes:v.holes,cur:0,st:pl.map(()=>Array(v.holes).fill(null))}),
     kubb:()=>({target:v.target,rounds:[]}),
-    muehle:()=>mhNew(v.fly!==false,v.millRule,v.draw10!==false)
+    muehle:()=>mhNew(v.fly!==false,v.millRule,v.draw10!==false),
+    dart:()=>dtNew(v,pl)
   }[v.game]();
   S.current={game:v.game,players:pl,started:Date.now(),data};
   save();view={name:'play'};render();window.scrollTo(0,0);
@@ -494,7 +736,7 @@ function finishGame(){
   const c=S.current,miss=incomplete(c);
   if(!confirm((miss?miss+'\n\n':'')+'Spiel beenden und in der Historie speichern?'))return;
   const sc=totals(c),best=GAMES[c.game].best==='low'?Math.min(...sc):Math.max(...sc);
-  S.history.unshift({id:Date.now(),game:c.game,date:Date.now(),started:c.started,players:c.players,scores:sc,winners:c.players.filter((_,i)=>sc[i]===best),info:info(c)});
+  S.history.unshift({id:Date.now(),game:c.game,date:Date.now(),started:c.started,players:c.players,scores:sc,winners:c.game==='dart'&&c.data.over?[c.players[c.data.over.w]]:c.players.filter((_,i)=>sc[i]===best),info:info(c),...(c.game==='dart'?{dart:dtSummary(c)}:{})});
   knPick=null;S.current=null;save();view={name:'history',filter:'all'};render();window.scrollTo(0,0);
 }
 function delEntry(id){if(confirm('Diesen Eintrag aus der Historie löschen?')){S.history=S.history.filter(e=>e.id!==id);save();render()}}
@@ -542,6 +784,16 @@ function setupV(){
   h+='</div>';
   if(v.game==='minigolf')h+=`<div class="card"><h2>Anzahl Bahnen</h2><div class="seg">${[9,12,18].map(n=>`<button class="${v.holes===n?'on':''}" onclick="view.holes=${n};render()">${n}</button>`).join('')}</div></div>`;
   if(kubb)h+=`<div class="card"><h2>Gewinnsätze</h2><div class="seg">${[1,2,3,4,5].map(n=>`<button class="${v.target===n?'on':''}" onclick="view.target=${n};render()">${n}</button>`).join('')}</div></div>`;
+  if(v.game==='dart'){
+    const dm=v.dmode||'501',x=dm==='301'||dm==='501',seg=(key,cur,opts)=>`<div class="seg wrap">${opts.map(([k,l])=>`<button class="${String(cur)===String(k)?'on':''}" onclick="view.${key}=${typeof k==='number'?k:`'${k}'`};render()">${l}</button>`).join('')}</div>`;
+    h+=`<div class="card"><h2>Spielart</h2>${seg('dmode',dm,Object.entries(DT_MODES))}</div>`;
+    if(x){
+      h+=`<div class="card"><h2>Check-in</h2>${seg('din',v.din||'single',[['single','Single In'],['double','Double In']])}<p class="muted" style="font-size:13px;margin:8px 0 0">${v.din==='double'?'Punkte zählen erst ab dem ersten Doppel (oder Bull) – das Doppel selbst zählt mit.':'Jeder Treffer zählt von Anfang an.'}</p></div>`;
+      h+=`<div class="card"><h2>Check-out</h2>${seg('dout',v.dout||'double',Object.entries(DT_OUT))}<p class="muted" style="font-size:13px;margin:8px 0 0">${{double:'Das letzte Dart muss ein Doppel oder Bull sein.',single:'Beliebiger Treffer auf genau 0.',master:'Das letzte Dart muss ein Doppel, Triple oder Bull sein.'}[v.dout||'double']}</p></div>`;
+      h+=`<div class="card"><h2>Legs (First to)</h2>${seg('dlegs',v.dlegs||1,[[1,'1 Leg'],[2,'2'],[3,'3'],[5,'5']])}</div>`;
+      h+=`<div class="card"><h2>Eingabe</h2>${seg('dinput',v.dinput||'total',[['total','Aufnahme (Summe)'],['darts','Einzelne Darts']])}<p class="muted" style="font-size:13px;margin:8px 0 0">Lässt sich im Spiel jederzeit umschalten.</p></div>`;
+    }else h+=`<p class="muted" style="margin:0 0 12px">${dm==='cricket'?'Zahlen 15–20 und Bull je dreimal treffen. Wer eine Zahl geschlossen hat, sammelt dort Punkte, solange ein Gegner sie noch offen hat.':'Der Reihe nach 1 bis 20 und zum Schluss Bull treffen. Wer zuerst fertig ist, gewinnt.'}</p>`;
+  }
   if(v.game==='muehle')h+=`<div class="card"><label class="toggle"><span><b>Springen erlaubt</b><br><small class="muted">Wer nur noch 3 Steine hat, darf auf jeden freien Punkt springen.</small></span><input type="checkbox" id="mhfly" ${v.fly!==false?'checked':''} onchange="view.fly=this.checked"></label></div>`;
   if(v.game==='muehle')h+=`<div class="card"><label class="toggle"><span><b>Remis bei 3 gegen 3</b><br><small class="muted">Haben beide nur noch 3 Steine und fällt nach ${MH_DRAW} Zügen je Spieler keine Mühle, endet das Spiel unentschieden.</small></span><input type="checkbox" id="mhdraw" ${v.draw10!==false?'checked':''} onchange="view.draw10=this.checked"></label></div>`;
   if(v.game==='muehle'){const mr=v.millRule||'frei';h+=`<div class="card"><h2>Wieder geschlossene Mühle</h2><div class="mh-rules">${Object.entries(MH_RULES).map(([k,[t,dsc]])=>`<label class="mh-rule${mr===k?' on':''}"><input type="radio" name="mhrule" id="mhr-${k}" value="${k}"${mr===k?' checked':''} onchange="view.millRule='${k}';render()"><span><b>${t}</b><small>${dsc}</small></span></label>`).join('')}</div></div>`}
@@ -553,15 +805,15 @@ function setupV(){
 function playV(){
   const c=S.current,g=GAMES[c.game],tot=totals(c);
   const best=g.best==='low'?Math.min(...tot):Math.max(...tot),any=tot.some(v=>v!==0);
-  let h=c.game==='muehle'?'':`<div class="standings">${c.players.map((p,i)=>`<span class="${any&&tot[i]===best&&c.players.length>1?'lead':''}">${any&&tot[i]===best&&c.players.length>1?'👑 ':''}${esc(p)} <b>${tot[i]}</b></span>`).join('')}</div>`;
-  h+={kniffel:knV,rummikub:rkV,minigolf:mgV,kubb:kbV,muehle:mhV}[c.game](c);
+  let h=c.game==='muehle'||c.game==='dart'?'':`<div class="standings">${c.players.map((p,i)=>`<span class="${any&&tot[i]===best&&c.players.length>1?'lead':''}">${any&&tot[i]===best&&c.players.length>1?'👑 ':''}${esc(p)} <b>${tot[i]}</b></span>`).join('')}</div>`;
+  h+={kniffel:knV,rummikub:rkV,minigolf:mgV,kubb:kbV,muehle:mhV,dart:dtV}[c.game](c);
   h+=`<div class="actions"><button class="primary wide" onclick="finishGame()">Spiel beenden &amp; speichern</button><button class="danger wide" onclick="discard()">Spiel verwerfen</button></div>`;
   return h;
 }
 function entryV(e){
   const g=GAMES[e.game];
   const order=e.players.map((p,i)=>({p,s:e.scores[i]})).sort((a,b)=>g.best==='low'?a.s-b.s:b.s-a.s);
-  return `<div class="card entry"><div class="eh"><b>${g.ico} ${g.name}</b><small class="muted">${fmtDate(e.date)}${e.info?' · '+esc(e.info):''}</small><button class="ghost small danger" onclick="delEntry(${e.id})" aria-label="Löschen">✕</button></div><ol class="rank">${order.map(o=>`<li class="${e.winners.includes(o.p)?'w':''}"><div><span>${e.winners.includes(o.p)?'🏆 ':''}${esc(o.p)}</span><span>${o.s}</span></div></li>`).join('')}</ol></div>`;
+  return `<div class="card entry"><div class="eh"><b>${g.ico} ${g.name}</b><small class="muted">${fmtDate(e.date)}${e.info?' · '+esc(e.info):''}</small><button class="ghost small danger" onclick="delEntry(${e.id})" aria-label="Löschen">✕</button></div><ol class="rank">${order.map(o=>`<li class="${e.winners.includes(o.p)?'w':''}"><div><span>${e.winners.includes(o.p)?'🏆 ':''}${esc(o.p)}${e.dart&&(e.dart.mode==='301'||e.dart.mode==='501')?` <small class="muted">Ø ${dtNum(e.dart.st[e.players.indexOf(o.p)].avg)}</small>`:''}</span><span>${o.s}</span></div></li>`).join('')}</ol></div>`;
 }
 function histV(){
   const f=view.filter||'all',list=S.history.filter(e=>f==='all'||e.game===f);
@@ -572,6 +824,7 @@ function histV(){
     list.forEach(e=>{e.players.forEach(p=>{st[p]=st[p]||{n:0,w:0};st[p].n++});if(e.players.length>1)e.winners.forEach(p=>st[p].w++)});
     const rows=Object.entries(st).sort((a,b)=>b[1].w-a[1].w||a[1].n-b[1].n);
     h+=`<div class="card"><h2>Statistik</h2><table class="stats"><tr><th>Spieler</th><th>Spiele</th><th>Siege</th><th>Quote</th></tr>${rows.map(([p,s])=>`<tr><td>${esc(p)}</td><td>${s.n}</td><td>${s.w}</td><td>${Math.round(s.w/s.n*100)} %</td></tr>`).join('')}</table><p class="muted" style="margin:8px 0 0;font-size:13px">Siege zählen nur bei Spielen mit mehreren Teilnehmern.</p></div>`;
+    h+=dtStatsV(list);
     h+=list.map(entryV).join('');
   }
   h+=`<div class="card"><h2>Sicherung</h2><p class="muted">Die Daten liegen nur auf diesem Gerät im Browser. Mit einer Sicherung kannst du sie auf ein anderes Gerät übertragen.</p><div class="row"><button onclick="exportData()">⬇︎ Exportieren</button><label class="btn">⬆︎ Importieren<input type="file" accept=".json,application/json" hidden onchange="importData(this)"></label></div></div>`;
